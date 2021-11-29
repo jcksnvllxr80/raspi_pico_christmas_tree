@@ -6,11 +6,25 @@ from machine import Pin, SPI
 from ssd1306 import SSD1306_SPI
 import framebuf
 from utime import sleep_ms
+import _thread
 
 # Configure the number of WS2812 LEDs.
 NUM_LEDS = 50
 PIN_NUM = 22
 brightness = 0.5
+
+spi = SPI(0, 100000, mosi=Pin(19), sck=Pin(18))
+oled = SSD1306_SPI(128, 64, spi, Pin(17), Pin(20), Pin(16))
+#oled = SSD1306_SPI(WIDTH, HEIGHT, spi, dc,rst, cs) use GPIO PIN NUMBERS
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+YELLOW = (255, 150, 0)
+GREEN = (0, 255, 0)
+CYAN = (0, 255, 255)
+BLUE = (0, 0, 255)
+PURPLE = (180, 0, 255)
+WHITE = (255, 255, 255)
+COLORS = (BLACK, RED, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE)
 
 @rp2.asm_pio(sideset_init=rp2.PIO.OUT_LOW, out_shiftdir=rp2.PIO.SHIFT_LEFT, autopull=True, pull_thresh=24)
 def ws2812():
@@ -83,33 +97,22 @@ def rainbow_cycle(wait):
         pixels_show()
         sleep_ms(wait)
 
+def rgb_string_thread():
+    while True:
+        # print("fills")
+        # for color in COLORS:
+        #     pixels_fill(color)
+        #     pixels_show()
+        #     time.sleep_ms(0.2)
+        # print("chases")
+        # for color in COLORS:
+        #     color_chase(color, 10)
+        print("rainbow")
+        rainbow_cycle(0)
 
-spi = SPI(0, 100000, mosi=Pin(19), sck=Pin(18))
-oled = SSD1306_SPI(128, 64, spi, Pin(17), Pin(20), Pin(16))
-#oled = SSD1306_SPI(WIDTH, HEIGHT, spi, dc,rst, cs) use GPIO PIN NUMBERS
+
+_thread.start_new_thread(rgb_string_thread, ())
 while True:
-    BLACK = (0, 0, 0)
-    RED = (255, 0, 0)
-    YELLOW = (255, 150, 0)
-    GREEN = (0, 255, 0)
-    CYAN = (0, 255, 255)
-    BLUE = (0, 0, 255)
-    PURPLE = (180, 0, 255)
-    WHITE = (255, 255, 255)
-    COLORS = (BLACK, RED, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE)
-
-    # print("fills")
-    # for color in COLORS:
-    #     pixels_fill(color)
-    #     pixels_show()
-    #     time.sleep_ms(0.2)
-
-    # print("chases")
-    # for color in COLORS:
-    #     color_chase(color, 10)
-    # TODO: thread these so they happen simultaneously
-    print("rainbow")
-    rainbow_cycle(0)
     try:
         for i in range(40):
             for j in range(56):
