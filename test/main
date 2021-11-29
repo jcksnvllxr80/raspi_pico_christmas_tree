@@ -1,8 +1,11 @@
 # Example using PIO to drive a set of WS2812 LEDs.
 
-import array, time
-from machine import Pin
+import array
 import rp2
+from machine import Pin, SPI
+from ssd1306 import SSD1306_SPI
+import framebuf
+from utime import sleep_ms
 
 # Configure the number of WS2812 LEDs.
 NUM_LEDS = 50
@@ -42,7 +45,7 @@ def pixels_show():
         b = int((c & 0xFF) * brightness)
         dimmer_ar[i] = (g<<16) + (r<<8) + b
     sm.put(dimmer_ar, 8)
-    time.sleep_ms(10)
+    utime.sleep_ms(10)
 
 def pixels_set(i, color):
     ar[i] = (color[1]<<16) + (color[0]<<8) + color[2]
@@ -54,9 +57,9 @@ def pixels_fill(color):
 def color_chase(color, wait):
     for i in range(NUM_LEDS):
         pixels_set(i, color)
-        time.sleep_ms(wait)
+        utime.sleep_ms(wait)
         pixels_show()
-    time.sleep_ms(20)
+    utime.sleep_ms(20)
 
 def wheel(pos):
     # Input a value 0 to 255 to get a color value.
@@ -78,8 +81,12 @@ def rainbow_cycle(wait):
             rc_index = (i * 256 // NUM_LEDS) + j
             pixels_set(i, wheel(rc_index & 255))
         pixels_show()
-        time.sleep_ms(wait)
+        utime.sleep_ms(wait)
 
+
+spi = SPI(0, 100000, mosi=Pin(19), sck=Pin(18))
+oled = SSD1306_SPI(128, 64, spi, Pin(17), Pin(20), Pin(16))
+#oled = SSD1306_SPI(WIDTH, HEIGHT, spi, dc,rst, cs) use GPIO PIN NUMBERS
 while True:
     BLACK = (0, 0, 0)
     RED = (255, 0, 0)
@@ -91,15 +98,25 @@ while True:
     WHITE = (255, 255, 255)
     COLORS = (BLACK, RED, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE)
 
-    print("fills")
-    for color in COLORS:
-        pixels_fill(color)
-        pixels_show()
-        time.sleep_ms(0.2)
+    # print("fills")
+    # for color in COLORS:
+    #     pixels_fill(color)
+    #     pixels_show()
+    #     time.sleep_ms(0.2)
 
-    print("chases")
-    for color in COLORS:
-        color_chase(color, 10)
-
+    # print("chases")
+    # for color in COLORS:
+    #     color_chase(color, 10)
+    # TODO: thread these so they happen simultaneously
     print("rainbow")
     rainbow_cycle(0)
+    try:
+        for i in range(40):
+            for j in range(56):
+                oled.fill(0)
+                oled.show()
+                oled.text("HELLO WORLD", i, j)
+                oled.show()
+                sleep_ms(10)
+    except KeyboardInterrupt:
+        break
