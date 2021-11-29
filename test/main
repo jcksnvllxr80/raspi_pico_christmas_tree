@@ -25,6 +25,7 @@ BLUE = (0, 0, 255)
 PURPLE = (180, 0, 255)
 WHITE = (255, 255, 255)
 COLORS = (BLACK, RED, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE)
+baton = _thread.allocate_lock()
 
 @rp2.asm_pio(sideset_init=rp2.PIO.OUT_LOW, out_shiftdir=rp2.PIO.SHIFT_LEFT, autopull=True, pull_thresh=24)
 def ws2812():
@@ -99,6 +100,7 @@ def rainbow_cycle(wait):
 
 def rgb_string_thread():
     while True:
+        baton.acquire()
         # print("fills")
         # for color in COLORS:
         #     pixels_fill(color)
@@ -109,6 +111,7 @@ def rgb_string_thread():
         #     color_chase(color, 10)
         print("rainbow")
         rainbow_cycle(0)
+        baton.release()
 
 
 _thread.start_new_thread(rgb_string_thread, ())
