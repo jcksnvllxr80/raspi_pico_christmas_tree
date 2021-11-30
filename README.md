@@ -15,3 +15,15 @@
   4. save the image to a place easy to get to
   5. got to <https://javl.github.io/image2cpp/> and open the image from the previous step
   6. convert it and then use the *_img files in this proj as a template on how to use that data
+
+## TODO
+
+- new options for lighting styles (and images to go with them)
+  - red/green only
+  - gold only
+  - pulse solids
+  - gold pulse
+  - red/green pulse
+  - red green wheel
+  - all LEDs same color while cycling the rainbow
+  - random colors that change every 1/4 second
