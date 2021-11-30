@@ -9,7 +9,7 @@ from utime import sleep_ms, sleep_us, sleep
 import rainbow_img, chase_img, fill_img
 
 # Configure the number of WS2812 LEDs.
-NUM_LEDS = 50
+NUM_LEDS = 33
 PIN_NUM = 22
 brightness = 0.5
 oled_fps = 5
