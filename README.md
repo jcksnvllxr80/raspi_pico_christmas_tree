@@ -6,7 +6,7 @@
   - vcc  --> vcc
   - gnd  --> gnd
 
-# Text Image Creation
+## Text Image Creation
   1. open paint and set the properties canvas size to the number of pixels on the display (128,64)
   2. add some text with cool font and different size as well as bold and get it centered in the canvas
   3. select all (ctrl+a) then right click the image and invert colors
