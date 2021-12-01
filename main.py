@@ -16,6 +16,14 @@ NUM_LEDS = 33
 PIN_NUM = 22
 brightness = 0.5
 oled_fps = 5
+dc = Pin(17)
+rst = Pin(20)
+cs = Pin(16)
+mosi = Pin(19)
+sck = Pin(18)
+pix_res_x = 128  # SSD1306 horizontal resolution
+pix_res_y = 64   # SSD1306 vertical resolution
+
 button = Pin(15, Pin.IN, Pin.PULL_UP)
 onboard_led = Pin(25, Pin.OUT)
 
@@ -40,14 +48,10 @@ if style_index >= len(led_style_list):
 print("Style index from EEPROM: {}".format(style_index))
 led_style = led_style_list[style_index]
 
-pix_res_x = 128  # SSD1306 horizontal resolution
-pix_res_y = 64   # SSD1306 vertical resolution
-text_position = 1
 timer = Timer()
 
-spi = SPI(0, 100000, mosi=Pin(19), sck=Pin(18))
-oled = SSD1306_SPI(pix_res_x, pix_res_y, spi, Pin(17), Pin(20), Pin(16))
-#oled = SSD1306_SPI(WIDTH, HEIGHT, spi, dc,rst, cs) use GPIO PIN NUMBERS
+spi = SPI(0, 100000, mosi=mosi, sck=sck)
+oled = SSD1306_SPI(pix_res_x, pix_res_y, spi, dc, rst, cs)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 150, 0)
@@ -74,10 +78,8 @@ def ws2812():
 
 # Create the StateMachine with the ws2812 program, outputting on pin
 sm = rp2.StateMachine(0, ws2812, freq=8_000_000, sideset_base=Pin(PIN_NUM))
-
 # Start the StateMachine, it will wait for data on its FIFO.
 sm.active(1)
-
 # Display a pattern on the LEDs via an array of LED RGB values.
 ar = array.array("I", [0 for _ in range(NUM_LEDS)])
 
@@ -126,7 +128,7 @@ def wheel(pos):
     return (pos * 3, 0, 255 - pos * 3)
 
 
-def rainbow_cycle(wait):
+def rainbow_cycle(wait=0):
     for j in range(255):
         for i in range(NUM_LEDS):
             rc_index = (i * 256 // NUM_LEDS) + j
@@ -138,18 +140,8 @@ def rainbow_cycle(wait):
 
 
 def update_oled_display(timer):
-    global text_position
     try:
-        # print("text position is {}".format(text_position))
-        # oled.fill(0)
-        # oled.show()
-        # oled.text(led_style, text_position, 10)
-        # oled.show()
-        # sleep_ms(10)
-        # if text_position >= 40:
-        #     text_position = 1
-        # else:
-        #     text_position += 1
+        # print("displaying image for {}".format(led_style))
         display_image(img_utils.get_img(led_style))
     except KeyboardInterrupt:
         pass
@@ -202,13 +194,10 @@ def display_image(byte_array):
     oled.show()
 
 
+style_func_list = [rainbow_cycle, do_chase, do_fill]
+style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_press_isr)
 timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
 while True:
-    if led_style == "rainbow":
-        rainbow_cycle(0)
-    elif led_style == "chase":
-        do_chase()
-    elif led_style == "fill":
-        do_fill()
+    style_to_func_dict.get(led_style, rainbow_cycle)()
