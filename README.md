@@ -27,7 +27,4 @@
   - red green wheel
   - all LEDs same color while cycling the rainbow
   - random colors that change every 1/4 second
-- use eeprom to store current style
-- debounce the button better
 - get wifi working with the ESP8266
-- move all image data to a single file

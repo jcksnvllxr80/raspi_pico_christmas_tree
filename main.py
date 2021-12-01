@@ -2,25 +2,49 @@
 
 import array
 import rp2
-from machine import Pin, SPI, Timer
+from machine import Pin, SPI, Timer, I2C
+from EEPROM_24LC512 import EEPROM_24LC512
 from ssd1306 import SSD1306_SPI
 import framebuf
 from utime import sleep_ms, sleep_us, sleep
-import rainbow_img, chase_img, fill_img
+import img_utils
 
+STYLE_BYTES = 2
+STYLE_ADDRESS = 0
 # Configure the number of WS2812 LEDs.
 NUM_LEDS = 33
 PIN_NUM = 22
 brightness = 0.5
 oled_fps = 5
 button = Pin(15, Pin.IN, Pin.PULL_UP)
-led = Pin(25, Pin.OUT)
-led_style = "rainbow"  # TODO: read from non-volatile memory
-led_style_list = ["rainbow", "chase", "fill"]
+onboard_led = Pin(25, Pin.OUT)
+
+sda = Pin(12)
+scl = Pin(13)
+i2c = I2C(0, sda=sda, scl=scl, freq=1000000)
+i2c_devices = i2c.scan()
+print("I2C Devices: {}".format(i2c_devices))
+eeprom = EEPROM_24LC512(i2c, i2c_devices[0])
+
+
+def write_style_index_to_eeprom(index):
+    eeprom.write(STYLE_ADDRESS, index.to_bytes(STYLE_BYTES, 'big'))
+    print("Style index wrote to EEPROM: {}".format(index))
+
+
+led_style_list = img_utils.get_style_list()
+style_index = int.from_bytes(eeprom.read(STYLE_ADDRESS, STYLE_BYTES), 'big')
+if style_index >= len(led_style_list):
+    style_index = 0
+    write_style_index_to_eeprom(style_index)
+print("Style index from EEPROM: {}".format(style_index))
+led_style = led_style_list[style_index]
+
 pix_res_x = 128  # SSD1306 horizontal resolution
 pix_res_y = 64   # SSD1306 vertical resolution
 text_position = 1
 timer = Timer()
+
 spi = SPI(0, 100000, mosi=Pin(19), sck=Pin(18))
 oled = SSD1306_SPI(pix_res_x, pix_res_y, spi, Pin(17), Pin(20), Pin(16))
 #oled = SSD1306_SPI(WIDTH, HEIGHT, spi, dc,rst, cs) use GPIO PIN NUMBERS
@@ -33,12 +57,6 @@ BLUE = (0, 0, 255)
 PURPLE = (180, 0, 255)
 WHITE = (255, 255, 255)
 COLORS = (BLACK, RED, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE)
-
-byte_array_dict = {
-    "rainbow": rainbow_img.get_img(),
-    "chase": chase_img.get_img(),
-    "fill": fill_img.get_img()
-}
 
 @rp2.asm_pio(sideset_init=rp2.PIO.OUT_LOW, out_shiftdir=rp2.PIO.SHIFT_LEFT, autopull=True, pull_thresh=24)
 def ws2812():
@@ -132,16 +150,16 @@ def update_oled_display(timer):
         #     text_position = 1
         # else:
         #     text_position += 1
-        display_image(byte_array_dict[led_style])
+        display_image(img_utils.get_img(led_style))
     except KeyboardInterrupt:
         pass
 
 
 def button_press_isr(irq):
-    global led
-    led.on()
+    global onboard_led
+    onboard_led.on()
     go_to_next_style()
-    led.off()
+    onboard_led.off()
 
 
 def go_to_next_style():
@@ -150,6 +168,7 @@ def go_to_next_style():
     if len(led_style_list) <= next_index:
         next_index = 0
     led_style = led_style_list[next_index]
+    write_style_index_to_eeprom(next_index)
     show_current_style(led_style)
 
 
