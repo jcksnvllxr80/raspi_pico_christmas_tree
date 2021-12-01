@@ -28,3 +28,4 @@
   - all LEDs same color while cycling the rainbow
   - random colors that change every 1/4 second
 - get wifi working with the ESP8266
+- pull ws2812 code out of main into its own file
