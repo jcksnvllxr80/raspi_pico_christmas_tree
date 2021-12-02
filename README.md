@@ -31,3 +31,12 @@
 ## TODO
 
 - get wifi working with the ESP8266
+
+### Template for code
+
+```
+python
+from machine import Pin
+from esp8266 import ESP8266
+import time, sys
+```
