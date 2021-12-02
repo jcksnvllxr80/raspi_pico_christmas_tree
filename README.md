@@ -34,8 +34,7 @@
 
 ### Template for code
 
-```
-python
+```python
 from machine import Pin
 from esp8266 import ESP8266
 import time, sys
