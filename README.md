@@ -24,5 +24,4 @@
   - gold pulse
   - red/green pulse
   - red green wheel
-  - random colors that change every 1/4 second
 - get wifi working with the ESP8266
