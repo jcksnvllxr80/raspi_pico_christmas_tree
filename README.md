@@ -1,4 +1,16 @@
-# Raspberry Pi Pico Examples
+# Raspberry Pi Pico with ws2812 LED string, SSD1306 OLED display, and 24LC512 EEPROM. "Christmas Lights"
+
+[![GitHub version](https://img.shields.io/github/release/jcksnvllxr80/raspi_pico_christmas_tree.svg)](lib-release)
+[![GitHub download](https://img.shields.io/github/downloads/jcksnvllxr80/raspi_pico_christmas_tree/total.svg)](lib-release)
+[![GitHub stars](https://img.shields.io/github/stars/jcksnvllxr80/raspi_pico_christmas_tree.svg)](lib-stars)
+[![GitHub issues](https://img.shields.io/github/issues/jcksnvllxr80/raspi_pico_christmas_tree.svg)](lib-issues)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](lib-licence)
+
+## Image of project in its current phase (WIP)
+
+<p align="center">
+<img src="https://flic.kr/p/2mNhh1A" width="800">
+</p>
 
 ## Drive a set of WS2812 LEDs
 
