@@ -20,12 +20,9 @@
 
 - new options for lighting styles (and images to go with them)
   - red/green only
-  - gold only
   - pulse solids
   - gold pulse
   - red/green pulse
   - red green wheel
-  - all LEDs same color while cycling the rainbow
   - random colors that change every 1/4 second
 - get wifi working with the ESP8266
-- pull ws2812 code out of main into its own file
