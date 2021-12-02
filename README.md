@@ -12,6 +12,10 @@
 <img src="https://live.staticflickr.com/65535/51719562370_1b2c0b287a_k.jpg" width="800">
 </p>
 
+<p align="center">
+<img src="https://live.staticflickr.com/65535/51717997987_277b59fbd0_k.jpg" width="800">
+</p>
+
 ## Drive a set of WS2812 LEDs
 
 - Use a micropython IDE to upload the script file, examples/led_strip/main.py, to the pico and connect 3 pins to the light strip
