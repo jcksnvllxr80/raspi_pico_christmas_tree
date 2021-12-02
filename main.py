@@ -1,15 +1,21 @@
 # Example using PIO to drive a set of WS2812 LEDs.
 
 import array
-import rp2
-from machine import Pin, SPI, Timer, I2C
+# import rp2
+import sys
+from esp8266 import ESP8266
+from machine import Pin, SPI, Timer, I2C, UART
 from EEPROM_24LC512 import EEPROM_24LC512
 from ssd1306 import SSD1306_SPI
 import framebuf
-from utime import sleep_ms
+from utime import sleep_ms, sleep
 import img_utils
 from neopixel import Neopixel
 import random
+
+print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+print("RPi-Pico MicroPython Ver:", sys.version)
+print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 STYLE_BYTES = 2
 STYLE_ADDRESS = 0
@@ -35,6 +41,27 @@ i2c = I2C(0, sda=sda, scl=scl, freq=1000000)
 i2c_devices = i2c.scan()
 print("I2C Devices: {}".format(i2c_devices))
 eeprom = EEPROM_24LC512(i2c, i2c_devices[0])
+
+##################################
+## Create an ESP8266 Object
+esp01 = ESP8266()
+esp8266_at_ver = None
+print("StartUP", esp01.startUP())
+# print("Echo-Off", esp01.echoING())
+# print("\r\n\r\n")
+
+# '''
+# Print ESP8266 AT comand version and SDK details
+# '''
+# esp8266_at_ver = esp01.getVersion()
+# if(esp8266_at_ver != None):
+#     print(esp8266_at_ver)
+
+# '''
+# set the current WiFi in SoftAP+STA
+# '''
+# esp01.setCurrentWiFiMode()
+####################################
 
 
 def write_style_index_to_eeprom(index):

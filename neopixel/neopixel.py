@@ -1,4 +1,3 @@
-
 import array
 from utime import sleep_ms
 import rp2
@@ -39,7 +38,7 @@ class Neopixel:
 
 
     def __init__(self, data_pin, num_leds, brightness):
-        self.brightness = brightness
+        self._brightness = brightness
         self.num_leds = num_leds
         self.data_pin = data_pin
         # Create the StateMachine with the ws2812 program, outputting on pin
@@ -50,15 +49,18 @@ class Neopixel:
         self.ar = array.array("I", [0 for _ in range(self.num_leds)])
 
 
-    def brightness(self, brightness=None):
-        if brightness == None:
-            return self.brightness
-        else:
-            if brightness < 0.1:
-                brightness = 0.1
+    @property  # getter
+    def brightness(self):
+        return self._brightness
+
+
+    @brightness.setter  # setter
+    def brightness(self, brightness):
+        if brightness < 0.1:
+            brightness = 0.1
         if brightness > 1.0:
             brightness = 1.0
-        self.brightness = brightness
+        self._brightness = brightness
 
 
     def clear_pixels(self):
