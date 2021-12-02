@@ -18,10 +18,4 @@
 
 ## TODO
 
-- new options for lighting styles (and images to go with them)
-  - red/green only
-  - pulse solids
-  - gold pulse
-  - red/green pulse
-  - red green wheel
 - get wifi working with the ESP8266
