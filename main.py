@@ -87,13 +87,17 @@ else:
 
 httpCode, httpRes = esp01.doHttpGet(TIME_URL, TIME_URL_PATH)
 if httpRes:
-    print("response from worldtimeapi.org/api/timezone/America/New_York --> {}\n".format(httpRes))
+    print("response from worldtimeapi.org/api/timezone/America/New_York --> {}\n"\
+        .format(httpRes))
     json_resp_obj = ujson.loads(str(httpRes))
     print("json obj --> {}\n".format(json_resp_obj))
-    match = re.search(r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)',
-                    json_resp_obj['datetime'])
+    match = re.search(
+        r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)',
+        json_resp_obj['datetime']
+    )
     if match:
-        regex_match = match.group(0).replace("T", "-").replace(":", "-").replace(".", "-").split("-")
+        regex_match = match.group(0).replace("T", "-")\
+            .replace(":", "-").replace(".", "-").split("-")
         time_list = list(map(int, regex_match))
         RTC().datetime((
             time_list[0], 
@@ -108,7 +112,8 @@ if httpRes:
     else:
         print("Error parsing time from http response; cant set time.")
 else:
-    print("Error; no response from host: {}; cant set time.".format(TIME_URL+TIME_URL_PATH))
+    print("Error; no response from host: {}; cant set time."\
+        .format(TIME_URL+TIME_URL_PATH))
 ####################################
 
 
@@ -290,7 +295,8 @@ def do_flash():
     while True:
         for i in range(NUM_LEDS):
             for j in range(NUM_LEDS):
-                led_string.pixels_set(j, (abs(i+j) % 10, abs(i-(j+3)) % 10, abs(i-(j+6)) % 10))
+                led_string.pixels_set(j,\
+                    (abs(i+j) % 10, abs(i-(j+3)) % 10, abs(i-(j+6)) % 10))
             led_string.pixels_show()
             sleep_ms(50)
             if not led_style == "flash":
