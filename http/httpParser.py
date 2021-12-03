@@ -31,8 +31,9 @@ class HttpParser:
             #print(">>>>>>>>>>>>>>>>>",retParseResponse)
             retParseResponse = retParseResponse.split(r"\r\n\r\n")
             #print(">>>>>>>>>>>>>>>>>",retParseResponse[0])
-            self.__httpResponse = retParseResponse[1]
-            #print(">>>>>>>>>>>>>>>>>???",retParseResponse[1])
+            self.__httpResponse = \
+                retParseResponse[1] if retParseResponse[1][-1] not in "'" else retParseResponse[1][:-1]
+            print(">>>>>>>>>>>>>>>>>???",retParseResponse[1])
             self.__httpHeader = str(retParseResponse[0]).partition(":")[2]
             #print("--",self.__httpHeader)
             for code in str(self.__httpHeader.partition(r"\r\n")[0]).split():
