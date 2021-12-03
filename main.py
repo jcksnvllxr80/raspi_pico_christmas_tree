@@ -12,11 +12,16 @@ from utime import sleep_ms, sleep
 import img_utils
 from neopixel import Neopixel
 import random
+import base64
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("RPi-Pico MicroPython Ver:", sys.version)
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
+wifi_ssid = 'YWRtaW4='
+wifi_pw = 'YTFAYjIjYzM='
+base64.b64decode(wifi_ssid).decode("utf-8")
+base64.b64decode(wifi_pw).decode("utf-8")
 STYLE_BYTES = 2
 STYLE_ADDRESS = 0
 # Configure the number of WS2812 LEDs.
@@ -42,25 +47,37 @@ i2c_devices = i2c.scan()
 print("I2C Devices: {}".format(i2c_devices))
 eeprom = EEPROM_24LC512(i2c, i2c_devices[0])
 
+uart_port = 1
+uart_tx_pin = 4
+uart_rx_pin = 5
+uart_baud = 115200
 ##################################
-## Create an ESP8266 Object
-esp01 = ESP8266()
+## Create an ESP8266 Object  # TODO: Thread this chunk up
+esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
 esp8266_at_ver = None
 print("StartUP", esp01.startUP())
-# print("Echo-Off", esp01.echoING())
-# print("\r\n\r\n")
+print("Echo-Off", esp01.echoING())
+print("\r\n\r\n")
 
-# '''
-# Print ESP8266 AT comand version and SDK details
-# '''
-# esp8266_at_ver = esp01.getVersion()
-# if(esp8266_at_ver != None):
-#     print(esp8266_at_ver)
+'''
+Print ESP8266 AT comand version and SDK details
+'''
+esp8266_at_ver = esp01.getVersion()
+if(esp8266_at_ver != None):
+    print(esp8266_at_ver)
 
-# '''
-# set the current WiFi in SoftAP+STA
-# '''
-# esp01.setCurrentWiFiMode()
+'''
+set the current WiFi in SoftAP+STA
+'''
+esp01.setCurrentWiFiMode()
+apList = esp01.getAvailableAPs()
+for items in apList:
+   print(items)
+
+# TODO: encrypt these wifi ssid and pw values
+esp01.connectWiFi("FBI Surveillance Van #7", "4ppl3s+84nn4n4$")
+httpCode, httpRes = esp01.doHttpGet("worldtimeapi.org", "/api/timezone/America/New_York")
+# TODO: if response, parse response, set machine.RTC().datetime(<8-tuple>)
 ####################################
 
 

@@ -21,25 +21,25 @@ class ESP8266:
     Using this class, you access WiFi and do HTTP Post/Get operations.
     
     Attributes:
-        uartPort (int): The UART port number of the RPI Pico's UART BUS [Default UART0]
+        uartPort (int): The UART port number of the RPI Pico's UART BUS [Default UART1]
         baudRate (int): UART Baud-Rate for communicating between RPI Pico's & ESP8266 [Default 115200]
-        txPin (init): RPI Pico's Tx pin [Default Pin 0]
-        rxPin (init): RPI Pico's Rx pin [Default Pin 1]
+        txPin (init): RPI Pico's Tx pin [Default Pin 4]
+        rxPin (init): RPI Pico's Rx pin [Default Pin 5]
     """
 
     __rxData = None
     __txData = None
     __httpResponse = None
 
-    def __init__(self, uartPort=0, baudRate=115200, txPin=(0), rxPin=(1)):
+    def __init__(self, uartPort=1, baudRate=115200, txPin=8, rxPin=9):
         """
         The constructor for ESP8266 class
         
         Parameters:
-            uartPort (int): The UART port number of the RPI Pico's UART BUS [Default UART0]
+            uartPort (int): The UART port number of the RPI Pico's UART BUS [Default UART1]
             baudRate (int): UART Baud-Rate for communicating between RPI Pico's & ESP8266 [Default 115200]
-            txPin (init): RPI Pico's Tx pin [Default Pin 0]
-            rxPin (init): RPI Pico's Rx pin [Default Pin 1]
+            txPin (init): RPI Pico's Tx pin [Default Pin 4]
+            rxPin (init): RPI Pico's Rx pin [Default Pin 5]
         """
         self.__uartPort = uartPort
         self.__baudRate = baudRate
