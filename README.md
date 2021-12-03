@@ -18,7 +18,7 @@ This project was designed for a decorative Christmas tree made out of cedar whic
 
 ## Prerequisites
 
-The following classes (which are all in this repo) must be manually loaded onto the pico for the main.py to work:
+The following classes (which are all in this repo) must be manually loaded onto the pico for this project to work:
 
 - base64.py
 - EEPROM_24LC512.py
@@ -40,7 +40,8 @@ The following classes (which are all in this repo) must be manually loaded onto 
 
 ## TODO
 
-- get wifi working with the ESP8266
+- make a clock by utilizing the datetime object of the RTC (which was set from the internet API)
+- thread the connecting to wifi and setting time so those processes don't hold up the LED string from starting
 
 ### Template for code
 
