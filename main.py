@@ -29,6 +29,9 @@ STYLE_ADDRESS = 0
 # Configure the number of WS2812 LEDs.
 NUM_LEDS = 33
 led_data_pin = Pin(22)
+# configure wifi led pins for wifi user feedback
+grn_wifi_led = Pin(10, Pin.OUT)
+red_wifi_led = Pin(11, Pin.OUT)
 brightness = 0.5
 oled_fps = 5
 dc = Pin(17)
@@ -49,6 +52,18 @@ i2c_devices = i2c.scan()
 print("I2C Devices: {}".format(i2c_devices))
 eeprom = EEPROM_24LC512(i2c, i2c_devices[0])
 
+
+def wifi_led_red():
+    grn_wifi_led.off()
+    red_wifi_led.on()
+
+
+def wifi_led_green():
+    red_wifi_led.off()
+    grn_wifi_led.on()
+
+
+wifi_led_red()
 uart_port = 1
 uart_tx_pin = 4
 uart_rx_pin = 5
@@ -80,10 +95,12 @@ connection = esp01.connectWiFi(
     base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
     base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
 )
-if connection:
+if connection and "WIFI CONNECTED" in connection:
+    wifi_led_green()
     print("wifi connection --> {}".format(connection))
 else:
-    print("sorry, cant connect to wifi AP!")
+    wifi_led_red()
+    print("sorry, cant connect to wifi AP! connection --> {}".format(connection))
 
 httpCode, httpRes = esp01.doHttpGet(TIME_URL, TIME_URL_PATH)
 if httpRes:
