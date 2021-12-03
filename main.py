@@ -20,8 +20,8 @@ print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("RPi-Pico MicroPython Ver:", sys.version)
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-wifi_ssid = b'RkJJIFN1cnZlaWxsYW5jZSBWYW4gIzc='
-wifi_pw = b'NHBwbDNzKzg0bm40bjQk'
+wifi_ssid = 'RkJJIFN1cnZlaWxsYW5jZSBWYW4gIzc='
+wifi_pw = 'NHBwbDNzKzg0bm40bjQk'
 TIME_URL = "worldtimeapi.org"
 TIME_URL_PATH = "/api/timezone/America/New_York"
 STYLE_BYTES = 2
@@ -77,8 +77,8 @@ esp01.setCurrentWiFiMode()
 #    print(items)
 
 connection = esp01.connectWiFi(
-    base64.b64decode(wifi_ssid).decode("utf-8"),
-    base64.b64decode(wifi_pw).decode("utf-8")
+    base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
+    base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
 )
 if connection:
     print("wifi connection --> {}".format(connection))
