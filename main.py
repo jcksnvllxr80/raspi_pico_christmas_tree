@@ -4,7 +4,7 @@ import array
 # import rp2
 import sys
 from esp8266 import ESP8266
-from machine import Pin, SPI, Timer, I2C, UART
+from machine import Pin, SPI, Timer, I2C, UART, RTC
 from EEPROM_24LC512 import EEPROM_24LC512
 from ssd1306 import SSD1306_SPI
 import framebuf
@@ -14,6 +14,7 @@ from neopixel import Neopixel
 import random
 import base64
 import ujson
+import re
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("RPi-Pico MicroPython Ver:", sys.version)
@@ -21,6 +22,8 @@ print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 wifi_ssid = b'RkJJIFN1cnZlaWxsYW5jZSBWYW4gIzc='
 wifi_pw = b'NHBwbDNzKzg0bm40bjQk'
+TIME_URL = "worldtimeapi.org"
+TIME_URL_PATH = "/api/timezone/America/New_York"
 STYLE_BYTES = 2
 STYLE_ADDRESS = 0
 # Configure the number of WS2812 LEDs.
@@ -56,7 +59,7 @@ esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
 esp8266_at_ver = None
 print("StartUP", esp01.startUP())
 print("Echo-Off", esp01.echoING())
-print("\r\n\r\n")
+print("\n")
 
 '''
 Print ESP8266 AT comand version and SDK details
@@ -82,15 +85,30 @@ if connection:
 else:
     print("sorry, cant connect to wifi AP!")
 
-httpCode, httpRes = esp01.doHttpGet(
-    "worldtimeapi.org", 
-    "/api/timezone/America/New_York"
-)
+httpCode, httpRes = esp01.doHttpGet(TIME_URL, TIME_URL_PATH)
 if httpRes:
     print("response from worldtimeapi.org/api/timezone/America/New_York --> {}\n".format(httpRes))
     json_resp_obj = ujson.loads(str(httpRes))
-    print("json obj --> {}".format(json_resp_obj))
-# TODO: if response, parse response, set machine.RTC().datetime(<8-tuple>)
+    print("json obj --> {}\n".format(json_resp_obj))
+    match = re.search(r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)',
+                    json_resp_obj['datetime'])
+    if match:
+        regex_match = match.group(0).replace("T", "-").replace(":", "-").replace(".", "-").split("-")
+        time_list = list(map(int, regex_match))
+        RTC().datetime((
+            time_list[0], 
+            time_list[1], 
+            time_list[2], 
+            int(json_resp_obj['day_of_week']), 
+            time_list[3], 
+            time_list[4], 
+            time_list[5], 
+            time_list[6]
+        ))
+    else:
+        print("Error parsing time from http response; cant set time.")
+else:
+    print("Error; no response from host: {}; cant set time.".format(TIME_URL+TIME_URL_PATH))
 ####################################
 
 
