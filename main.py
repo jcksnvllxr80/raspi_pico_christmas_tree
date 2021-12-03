@@ -13,6 +13,7 @@ import img_utils
 from neopixel import Neopixel
 import random
 import base64
+import ujson
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("RPi-Pico MicroPython Ver:", sys.version)
@@ -85,7 +86,10 @@ httpCode, httpRes = esp01.doHttpGet(
     "worldtimeapi.org", 
     "/api/timezone/America/New_York"
 )
-print("response from worldtimeapi.org/api/timezone/America/New_York --> {}\n".format(httpRes))
+if httpRes:
+    print("response from worldtimeapi.org/api/timezone/America/New_York --> {}\n".format(httpRes))
+    json_resp_obj = ujson.loads(str(httpRes))
+    print("json obj --> {}".format(json_resp_obj))
 # TODO: if response, parse response, set machine.RTC().datetime(<8-tuple>)
 ####################################
 
