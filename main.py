@@ -18,10 +18,8 @@ print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("RPi-Pico MicroPython Ver:", sys.version)
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-wifi_ssid = 'YWRtaW4='
-wifi_pw = 'YTFAYjIjYzM='
-base64.b64decode(wifi_ssid).decode("utf-8")
-base64.b64decode(wifi_pw).decode("utf-8")
+wifi_ssid = b'RkJJIFN1cnZlaWxsYW5jZSBWYW4gIzc='
+wifi_pw = b'NHBwbDNzKzg0bm40bjQk'
 STYLE_BYTES = 2
 STYLE_ADDRESS = 0
 # Configure the number of WS2812 LEDs.
@@ -70,13 +68,24 @@ if(esp8266_at_ver != None):
 set the current WiFi in SoftAP+STA
 '''
 esp01.setCurrentWiFiMode()
-apList = esp01.getAvailableAPs()
-for items in apList:
-   print(items)
+# apList = esp01.getAvailableAPs()
+# for items in apList:
+#    print(items)
 
-# TODO: encrypt these wifi ssid and pw values
-esp01.connectWiFi("FBI Surveillance Van #7", "4ppl3s+84nn4n4$")
-httpCode, httpRes = esp01.doHttpGet("worldtimeapi.org", "/api/timezone/America/New_York")
+connection = esp01.connectWiFi(
+    base64.b64decode(wifi_ssid).decode("utf-8"),
+    base64.b64decode(wifi_pw).decode("utf-8")
+)
+if connection:
+    print("wifi connection --> {}".format(connection))
+else:
+    print("sorry, cant connect to wifi AP!")
+
+httpCode, httpRes = esp01.doHttpGet(
+    "worldtimeapi.org", 
+    "/api/timezone/America/New_York"
+)
+print("response from worldtimeapi.org/api/timezone/America/New_York --> {}\n".format(httpRes))
 # TODO: if response, parse response, set machine.RTC().datetime(<8-tuple>)
 ####################################
 
