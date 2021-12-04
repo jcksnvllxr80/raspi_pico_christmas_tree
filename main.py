@@ -103,7 +103,7 @@ def connect_wifi():
 def get_wifi_conn_status(conn_status):
     if conn_status and "WIFI CONNECTED" in conn_status:
         wifi_led_green()
-        print("wifi successfully connected --> {}".format(conn_status))
+        # print("wifi successfully connected --> {}".format(conn_status))
     else:
         wifi_led_red()
         print("sorry, cant connect to wifi AP! connection --> {}".format(conn_status))
