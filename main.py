@@ -13,7 +13,6 @@ import random
 import base64
 import ujson
 import re
-import _thread
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("RPi-Pico MicroPython Ver:", sys.version)
@@ -33,6 +32,7 @@ grn_wifi_led = Pin(10, Pin.OUT)
 red_wifi_led = Pin(11, Pin.OUT)
 brightness = 0.5
 oled_fps = 5
+wifi_interval = 60
 dc = Pin(17)
 rst = Pin(20)
 cs = Pin(16)
@@ -40,8 +40,6 @@ mosi = Pin(19)
 sck = Pin(18)
 pix_res_x = 128  # SSD1306 horizontal resolution
 pix_res_y = 64   # SSD1306 vertical resolution
-
-
 
 button = Pin(15, Pin.IN, Pin.PULL_UP)
 onboard_led = Pin(25, Pin.OUT)
@@ -64,6 +62,7 @@ def wifi_led_green():
     grn_wifi_led.on()
 
 
+connection = ""
 wifi_led_red()
 uart_port = 1
 uart_tx_pin = 4
@@ -71,65 +70,84 @@ uart_rx_pin = 5
 uart_baud = 115200
 
 
-# # Create an ESP8266 Object
-# esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
-# esp8266_at_ver = None
-# print("StartUP", esp01.startUP())
-# print("Echo-Off", esp01.echoING())
-# print("\n")
+def init_esp8266():
+    esp8266_at_ver = None
+    print("StartUP", esp01.startUP())
+    print("Echo-Off", esp01.echoING())
+    print("\n")
 
-# '''
-# Print ESP8266 AT comand version and SDK details
-# '''
-# esp8266_at_ver = esp01.getVersion()
-# if(esp8266_at_ver != None):
-#     print(esp8266_at_ver)
+    '''
+    Print ESP8266 AT comand version and SDK details
+    '''
+    esp8266_at_ver = esp01.getVersion()
+    if(esp8266_at_ver != None):
+        print(esp8266_at_ver)
 
-# '''
-# set the current WiFi in SoftAP+STA
-# '''
-# esp01.setCurrentWiFiMode()
-# # apList = esp01.getAvailableAPs()
-# # for items in apList:
-# #    print(items)
+    '''
+    set the current WiFi in SoftAP+STA
+    '''
+    esp01.setCurrentWiFiMode()
+    # apList = esp01.getAvailableAPs()
+    # for items in apList:
+    #    print(items)
 
-# connection = esp01.connectWiFi(
-#     base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
-#     base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
-# )
-# if connection and "WIFI CONNECTED" in connection:
-#     wifi_led_green()
-#     print("wifi connection --> {}".format(connection))
-# else:
-#     wifi_led_red()
-#     print("sorry, cant connect to wifi AP! connection --> {}".format(connection))
 
-# httpCode, httpRes = esp01.doHttpGet(TIME_URL, TIME_URL_PATH)
-# if httpRes:
-#     print("response from {} --> {}\n".format(TIME_URL + TIME_URL_PATH, httpRes))
-#     json_resp_obj = ujson.loads(str(httpRes))
-#     print("json obj --> {}\n".format(json_resp_obj))
-#     datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)'
-#     match = re.search(datetime_regex_string, json_resp_obj['datetime'])
-#     if match:
-#         regex_match = match.group(0).replace("T", "-")\
-#             .replace(":", "-").replace(".", "-").split("-")
-#         time_list = list(map(int, regex_match))
-#         RTC().datetime((
-#             time_list[0], 
-#             time_list[1], 
-#             time_list[2], 
-#             int(json_resp_obj['day_of_week']), 
-#             time_list[3], 
-#             time_list[4], 
-#             time_list[5], 
-#             time_list[6]
-#         ))
-#     else:
-#         print("Error parsing time from http response; cant set time.")
-# else:
-#     print("Error; no response from host: {}; cant set time."\
-#         .format(TIME_URL+TIME_URL_PATH))
+def connect_wifi():
+    conn_status = esp01.connectWiFi(
+        base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
+        base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
+    )
+    get_wifi_conn_status(conn_status)
+
+
+def get_wifi_conn_status(conn_status):
+    if conn_status and "WIFI CONNECTED" in conn_status:
+        wifi_led_green()
+        query_time_api()
+        print("wifi connection --> {}".format(conn_status))
+    else:
+        wifi_led_red()
+        print("sorry, cant connect to wifi AP! connection --> {}".format(conn_status))
+    return conn_status
+
+
+def set_rtc(re_match, response_json):
+    date_formatted_str = re_match.group(0).replace("T", "-")\
+        .replace(":", "-").replace(".", "-").split("-")
+    time_list = list(map(int, date_formatted_str))
+    RTC().datetime((
+        time_list[0],
+        time_list[1],
+        time_list[2],
+        int(response_json['day_of_week']),
+        time_list[3],
+        time_list[4],
+        time_list[5],
+        time_list[6]
+    ))
+
+
+def query_time_api():
+    httpCode, httpRes = esp01.doHttpGet(TIME_URL, TIME_URL_PATH)
+    if httpRes:
+        print("response from {} --> {}\n".format(TIME_URL + TIME_URL_PATH, httpRes))
+        json_resp_obj = ujson.loads(str(httpRes))
+        print("json obj --> {}\n".format(json_resp_obj))
+        datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)'
+        match = re.search(datetime_regex_string, json_resp_obj['datetime'])
+        if match:
+            set_rtc(match, json_resp_obj)
+            print("RTC was set from internet time API: {}!".format(match.group(0)))
+        else:
+            print("Error parsing time from http response; cant set RTC.")
+    else:
+        print("Error; no response from host: {}; cant set RTC."\
+            .format(TIME_URL+TIME_URL_PATH))
+
+
+# Create an ESP8266 Object
+esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
+init_esp8266()
 
 
 def write_style_index_to_eeprom(index):
@@ -145,7 +163,8 @@ if style_index >= len(led_style_list):
 print("Style index from EEPROM: {}".format(style_index))
 led_style = led_style_list[style_index]
 
-timer = Timer()
+oled_timer = Timer()
+wifi_timer = Timer()
 
 spi = SPI(0, 100000, mosi=mosi, sck=sck)
 oled = SSD1306_SPI(pix_res_x, pix_res_y, spi, dc, rst, cs)
@@ -162,12 +181,14 @@ def color_chase(color, wait):
     sleep_ms(20)
 
 
-def update_oled_display(timer):
-    try:
-        # print("displaying image for {}".format(led_style))
-        display_image(img_utils.get_img(led_style))
-    except KeyboardInterrupt:
-        pass
+def update_oled_display(oled_timer):
+    display_image(img_utils.get_img(led_style))
+
+
+def update_conn_status(wifi_timer):
+    global connection
+    # Test connection
+    connection = get_wifi_conn_status(connection)
 
 
 def button_press_isr(irq):
@@ -328,7 +349,6 @@ def display_image(byte_array):
     oled.show()
 
 
-sLock = _thread.allocate_lock()
 style_func_list = [
     do_rainbow_cycle, do_chase, do_fill, do_off, do_red, 
     do_yellow, do_green, do_cyan, do_blue, do_purple, do_white,
@@ -337,6 +357,8 @@ style_func_list = [
 style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_press_isr)
-timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
+oled_timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
+wifi_timer.init(freq=wifi_interval, mode=Timer.PERIODIC, callback=update_conn_status)
+connection = connect_wifi()
 while True:
     style_to_func_dict.get(led_style, do_rainbow_cycle)()
