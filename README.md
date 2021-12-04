@@ -42,7 +42,7 @@ The following classes (which are all in this repo) must be manually loaded onto 
 
 - make a clock by utilizing the datetime object of the RTC (which was set from the internet API)
 - thread the initial connecting to wifi and setting time so those processes don't delay LED string from starting
-- on a timer, check wifi connection status (threaded)... if connection, use time API to set RTC, otherwise reconnect
+- on a timer, check wifi connection status (threaded)... if connection, use time API to set RTC, otherwise reconnect and then set time once connected
 
 ### Template for code
 

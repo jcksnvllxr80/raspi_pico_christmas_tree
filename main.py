@@ -193,10 +193,10 @@ def show_current_style(style):
     print("item {}: {}".format(led_style_list.index(style)+1, style))
 
 
-def do_rainbow_cycle(wait=0):
-    for j in range(255):
+def do_rainbow_cycle(wait=20):
+    for j in range(256):
         for i in range(NUM_LEDS):
-            rc_index = (i * 256 // NUM_LEDS) + j
+            rc_index = int(i * 256 / NUM_LEDS) + j
             led_string.pixels_set(i, Neopixel.wheel(rc_index & 255))
         led_string.pixels_show()
         if not led_style == "rainbow":
@@ -301,6 +301,7 @@ def do_blend():
         color = Neopixel.colorHSV(hue, 255, 150)
         led_string.pixels_fill(color)
         led_string.pixels_show()
+        sleep_ms(20)
         hue += 150
         if not led_style == "blend":
             return
