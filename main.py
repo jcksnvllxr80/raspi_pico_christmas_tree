@@ -32,7 +32,7 @@ grn_wifi_led = Pin(10, Pin.OUT)
 red_wifi_led = Pin(11, Pin.OUT)
 brightness = 0.5
 oled_fps = 5
-wifi_interval = 60
+wifi_check_freq = 0.017
 dc = Pin(17)
 rst = Pin(20)
 cs = Pin(16)
@@ -97,7 +97,7 @@ def connect_wifi():
         base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
         base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
     )
-    get_wifi_conn_status(conn_status)
+    return get_wifi_conn_status(conn_status)
 
 
 def get_wifi_conn_status(conn_status):
@@ -130,7 +130,7 @@ def set_rtc(re_match, response_json):
 def query_time_api():
     httpCode, httpRes = esp01.doHttpGet(TIME_URL, TIME_URL_PATH)
     if httpRes:
-        print("response from {} --> {}\n".format(TIME_URL + TIME_URL_PATH, httpRes))
+        print("\nResponse from {} --> {}\n".format(TIME_URL + TIME_URL_PATH, httpRes))
         json_resp_obj = ujson.loads(str(httpRes))
         print("json obj --> {}\n".format(json_resp_obj))
         datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)'
@@ -145,9 +145,10 @@ def query_time_api():
             .format(TIME_URL+TIME_URL_PATH))
 
 
-# Create an ESP8266 Object
+# Create an ESP8266 Object, init, and connect to wifi AP
 esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
 init_esp8266()
+connection = connect_wifi()
 
 
 def write_style_index_to_eeprom(index):
@@ -187,8 +188,7 @@ def update_oled_display(oled_timer):
 
 def update_conn_status(wifi_timer):
     global connection
-    # Test connection
-    connection = get_wifi_conn_status(connection)
+    connection = get_wifi_conn_status(esp01.getConnectionStatus())
 
 
 def button_press_isr(irq):
@@ -358,7 +358,6 @@ style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_press_isr)
 oled_timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
-wifi_timer.init(freq=wifi_interval, mode=Timer.PERIODIC, callback=update_conn_status)
-connection = connect_wifi()
+wifi_timer.init(freq=wifi_check_freq, mode=Timer.PERIODIC, callback=update_conn_status)
 while True:
     style_to_func_dict.get(led_style, do_rainbow_cycle)()
