@@ -1,20 +1,19 @@
 # Example using PIO to drive a set of WS2812 LEDs.
 
-import array
-# import rp2
 import sys
 from esp8266 import ESP8266
-from machine import Pin, SPI, Timer, I2C, UART, RTC
+from machine import Pin, SPI, Timer, I2C, RTC
 from EEPROM_24LC512 import EEPROM_24LC512
 from ssd1306 import SSD1306_SPI
 import framebuf
-from utime import sleep_ms, sleep
+from utime import sleep_ms
 import img_utils
 from neopixel import Neopixel
 import random
 import base64
 import ujson
 import re
+import _thread
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("RPi-Pico MicroPython Ver:", sys.version)
@@ -42,6 +41,8 @@ sck = Pin(18)
 pix_res_x = 128  # SSD1306 horizontal resolution
 pix_res_y = 64   # SSD1306 vertical resolution
 
+
+
 button = Pin(15, Pin.IN, Pin.PULL_UP)
 onboard_led = Pin(25, Pin.OUT)
 
@@ -68,70 +69,67 @@ uart_port = 1
 uart_tx_pin = 4
 uart_rx_pin = 5
 uart_baud = 115200
-##################################
-## Create an ESP8266 Object  # TODO: Thread this chunk up
-esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
-esp8266_at_ver = None
-print("StartUP", esp01.startUP())
-print("Echo-Off", esp01.echoING())
-print("\n")
 
-'''
-Print ESP8266 AT comand version and SDK details
-'''
-esp8266_at_ver = esp01.getVersion()
-if(esp8266_at_ver != None):
-    print(esp8266_at_ver)
 
-'''
-set the current WiFi in SoftAP+STA
-'''
-esp01.setCurrentWiFiMode()
-# apList = esp01.getAvailableAPs()
-# for items in apList:
-#    print(items)
+# # Create an ESP8266 Object
+# esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
+# esp8266_at_ver = None
+# print("StartUP", esp01.startUP())
+# print("Echo-Off", esp01.echoING())
+# print("\n")
 
-connection = esp01.connectWiFi(
-    base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
-    base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
-)
-if connection and "WIFI CONNECTED" in connection:
-    wifi_led_green()
-    print("wifi connection --> {}".format(connection))
-else:
-    wifi_led_red()
-    print("sorry, cant connect to wifi AP! connection --> {}".format(connection))
+# '''
+# Print ESP8266 AT comand version and SDK details
+# '''
+# esp8266_at_ver = esp01.getVersion()
+# if(esp8266_at_ver != None):
+#     print(esp8266_at_ver)
 
-httpCode, httpRes = esp01.doHttpGet(TIME_URL, TIME_URL_PATH)
-if httpRes:
-    print("response from worldtimeapi.org/api/timezone/America/New_York --> {}\n"\
-        .format(httpRes))
-    json_resp_obj = ujson.loads(str(httpRes))
-    print("json obj --> {}\n".format(json_resp_obj))
-    match = re.search(
-        r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)',
-        json_resp_obj['datetime']
-    )
-    if match:
-        regex_match = match.group(0).replace("T", "-")\
-            .replace(":", "-").replace(".", "-").split("-")
-        time_list = list(map(int, regex_match))
-        RTC().datetime((
-            time_list[0], 
-            time_list[1], 
-            time_list[2], 
-            int(json_resp_obj['day_of_week']), 
-            time_list[3], 
-            time_list[4], 
-            time_list[5], 
-            time_list[6]
-        ))
-    else:
-        print("Error parsing time from http response; cant set time.")
-else:
-    print("Error; no response from host: {}; cant set time."\
-        .format(TIME_URL+TIME_URL_PATH))
-####################################
+# '''
+# set the current WiFi in SoftAP+STA
+# '''
+# esp01.setCurrentWiFiMode()
+# # apList = esp01.getAvailableAPs()
+# # for items in apList:
+# #    print(items)
+
+# connection = esp01.connectWiFi(
+#     base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
+#     base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
+# )
+# if connection and "WIFI CONNECTED" in connection:
+#     wifi_led_green()
+#     print("wifi connection --> {}".format(connection))
+# else:
+#     wifi_led_red()
+#     print("sorry, cant connect to wifi AP! connection --> {}".format(connection))
+
+# httpCode, httpRes = esp01.doHttpGet(TIME_URL, TIME_URL_PATH)
+# if httpRes:
+#     print("response from {} --> {}\n".format(TIME_URL + TIME_URL_PATH, httpRes))
+#     json_resp_obj = ujson.loads(str(httpRes))
+#     print("json obj --> {}\n".format(json_resp_obj))
+#     datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)'
+#     match = re.search(datetime_regex_string, json_resp_obj['datetime'])
+#     if match:
+#         regex_match = match.group(0).replace("T", "-")\
+#             .replace(":", "-").replace(".", "-").split("-")
+#         time_list = list(map(int, regex_match))
+#         RTC().datetime((
+#             time_list[0], 
+#             time_list[1], 
+#             time_list[2], 
+#             int(json_resp_obj['day_of_week']), 
+#             time_list[3], 
+#             time_list[4], 
+#             time_list[5], 
+#             time_list[6]
+#         ))
+#     else:
+#         print("Error parsing time from http response; cant set time.")
+# else:
+#     print("Error; no response from host: {}; cant set time."\
+#         .format(TIME_URL+TIME_URL_PATH))
 
 
 def write_style_index_to_eeprom(index):
@@ -194,9 +192,9 @@ def show_current_style(style):
 
 
 def do_rainbow_cycle(wait=20):
-    for j in range(256):
+    for j in range(255):
         for i in range(NUM_LEDS):
-            rc_index = int(i * 256 / NUM_LEDS) + j
+            rc_index = int(i * 255 / NUM_LEDS) + j
             led_string.pixels_set(i, Neopixel.wheel(rc_index & 255))
         led_string.pixels_show()
         if not led_style == "rainbow":
@@ -330,6 +328,7 @@ def display_image(byte_array):
     oled.show()
 
 
+sLock = _thread.allocate_lock()
 style_func_list = [
     do_rainbow_cycle, do_chase, do_fill, do_off, do_red, 
     do_yellow, do_green, do_cyan, do_blue, do_purple, do_white,
