@@ -136,7 +136,7 @@ def query_time_api():
         match = re.search(datetime_regex_string, json_resp_obj['datetime'])
         if match:
             set_rtc(match, json_resp_obj)
-            print("RTC was set from internet time API: {}!".format(match.group(0)))
+            print("RTC was set from internet time API: {}".format(match.group(0)))
         else:
             print("Error parsing time from http response; cant set RTC.")
     else:
