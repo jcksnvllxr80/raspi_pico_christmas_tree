@@ -104,7 +104,7 @@ def get_wifi_conn_status(conn_status):
     if conn_status and "WIFI CONNECTED" in conn_status:
         wifi_led_green()
         # query_time_api()
-        print("wifi connection --> {}".format(conn_status))
+        print("wifi successfully connected --> {}".format(conn_status))
     else:
         wifi_led_red()
         print("sorry, cant connect to wifi AP! connection --> {}".format(conn_status))
@@ -145,24 +145,18 @@ def query_time_api():
             .format(TIME_URL+TIME_URL_PATH))
 
 
+def write_style_index_to_eeprom(index):
+    eeprom.write(STYLE_ADDRESS, index.to_bytes(STYLE_BYTES, 'big'))
+    print("Style index wrote to EEPROM: {}".format(index))
+
+
 # Create an SPI Object and use it for oled display
 oled_timer = Timer()
 wifi_timer = Timer()
 # spi = SPI(0, 100000, mosi=mosi, sck=sck)
 spi = SPI(0, 115200, mosi=mosi, sck=sck)
 oled = SSD1306_SPI(pix_res_x, pix_res_y, spi, dc, rst, cs)
-# Create an ESP8266 Object, init, and connect to wifi AP
-esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
-init_esp8266()
-connection = connect_wifi()
-print(esp01.getConnectionStatus())
-
-
-def write_style_index_to_eeprom(index):
-    eeprom.write(STYLE_ADDRESS, index.to_bytes(STYLE_BYTES, 'big'))
-    print("Style index wrote to EEPROM: {}".format(index))
-
-
+# initialize LED string stuff
 led_style_list = img_utils.get_style_list()
 style_index = int.from_bytes(eeprom.read(STYLE_ADDRESS, STYLE_BYTES), 'big')
 if style_index >= len(led_style_list):
@@ -171,6 +165,12 @@ if style_index >= len(led_style_list):
 print("Style index from EEPROM: {}".format(style_index))
 led_style = led_style_list[style_index]
 led_string = Neopixel(led_data_pin, NUM_LEDS, brightness)
+led_string.clear_pixels()
+led_string.pixels_show()
+# Create an ESP8266 Object, init, and connect to wifi AP
+esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
+init_esp8266()
+connection = connect_wifi()
 
 
 def color_chase(color, wait):
@@ -360,7 +360,5 @@ show_current_style(led_style)
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_press_isr)
 oled_timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
 wifi_timer.init(freq=wifi_check_freq, mode=Timer.PERIODIC, callback=update_conn_status)
-print(esp01.getConnectionStatus())
 while True:
-    pass
     style_to_func_dict.get(led_style, do_rainbow_cycle)()

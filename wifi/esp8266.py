@@ -406,13 +406,11 @@ class ESP8266:
         """
         retData = self._sendToESP8266("AT+CIPSTATUS\r\n")
         if retData:
-            if "+CIPSTATUS" in retData:
-                output_str = retData.split(":")[1].decode("utf-8")
-                if "2" in output_str:
-                    return ESP8266_WIFI_CONNECTED
-                else:
-                    return ESP8266_WIFI_DISCONNECTED
-            print("Returned from \'AT+CIPSTATUS\': {}".format(retData))
+            # print("Returned from \'AT+CIPSTATUS\': {}".format(retData))
+            if "STATUS:2" in retData.decode("utf-8"):
+                return ESP8266_WIFI_CONNECTED
+            else:
+                return ESP8266_WIFI_DISCONNECTED
         else:
             return False
 
