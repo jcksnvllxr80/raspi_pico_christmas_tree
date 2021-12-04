@@ -481,7 +481,7 @@ class ESP8266:
             if(retData != None):
                 if ">" in retData:
                     retData = self._sendToESP8266(getHeader, delay=2)
-                    # self._sendToESP8266("AT+CIPCLOSE\r\n")
+                    self._sendToESP8266("AT+CIPCLOSE\r\n")
                     retData = self.__httpResponse.parseHTTP(retData)
                     return retData, self.__httpResponse.getHTTPResponse()
                 else:
@@ -489,7 +489,7 @@ class ESP8266:
             else:
                 return 0, None
         else:
-            # self._sendToESP8266("AT+CIPCLOSE\r\n")
+            self._sendToESP8266("AT+CIPCLOSE\r\n")
             return 0, None
 
     def doHttpPost(self, host, path, user_agent="RPi-Pico", content_type="", content="", port=80):

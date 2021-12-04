@@ -103,6 +103,7 @@ def connect_wifi():
 def get_wifi_conn_status(conn_status):
     if conn_status and "WIFI CONNECTED" in conn_status:
         wifi_led_green()
+        query_time_api()
         # print("wifi successfully connected --> {}".format(conn_status))
     else:
         wifi_led_red()
@@ -189,8 +190,6 @@ def update_oled_display(oled_timer):
 def update_conn_status(wifi_timer):
     global connection
     connection = get_wifi_conn_status(esp01.getConnectionStatus())
-    if "WIFI CONNECTED" in connection:
-        query_time_api()
 
 
 def button_press_isr(irq):
