@@ -31,7 +31,7 @@ class ESP8266:
     __txData = None
     __httpResponse = None
 
-    def __init__(self, uartPort=1, baudRate=115200, txPin=8, rxPin=9):
+    def __init__(self, uartPort=1, baudRate=115200, txPin=4, rxPin=5):
         """
         The constructor for ESP8266 class
         
