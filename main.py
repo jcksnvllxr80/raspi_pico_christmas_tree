@@ -1,7 +1,7 @@
 # Example using PIO to drive a set of WS2812 LEDs.
 
 import sys
-from esp8266 import ESP8266
+from esp8266 import ESP8266, ESP8266_WIFI_CONNECTED
 from machine import Pin, SPI, Timer, I2C, RTC
 from EEPROM_24LC512 import EEPROM_24LC512
 from ssd1306 import SSD1306_SPI
@@ -94,21 +94,23 @@ def init_esp8266():
 
 def connect_wifi():
     print("Attempting to connect to wifi AP!")
-    return esp01.connectWiFi(
+    connection_status = esp01.connectWiFi(
         base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
         base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
     )
+    if connection_status in ESP8266_WIFI_CONNECTED:
+        print("Successfully connected to the wifi AP!")
+    return connection_status
 
 
 def get_wifi_conn_status(conn_status):
-    if conn_status and "WIFI CONNECTED" in conn_status:
+    if conn_status and conn_status in ESP8266_WIFI_CONNECTED:
         wifi_led_green()
         query_time_api()
-        # print("wifi successfully connected --> {}".format(conn_status))
+        # print("wifi connected --> {}".format(conn_status))
     else:
         wifi_led_red()
         print("sorry, cant connect to wifi AP! connection --> {}".format(conn_status))
-        conn_status = connect_wifi()
     return conn_status
 
 
@@ -153,7 +155,7 @@ def write_style_index_to_eeprom(index):
 
 # Create an SPI Object and use it for oled display
 oled_timer = Timer()
-wifi_timer = Timer()
+# wifi_timer = Timer()
 # spi = SPI(0, 100000, mosi=mosi, sck=sck)
 spi = SPI(0, 115200, mosi=mosi, sck=sck)
 oled = SSD1306_SPI(pix_res_x, pix_res_y, spi, dc, rst, cs)
@@ -190,7 +192,8 @@ def update_oled_display(oled_timer):
 
 def update_conn_status(wifi_timer):
     global connection
-    connection = get_wifi_conn_status(esp01.getConnectionStatus())
+    if esp01.getConnectionStatus() not in ESP8266_WIFI_CONNECTED:
+        connection = get_wifi_conn_status(connect_wifi())
 
 
 def button_press_isr(irq):
