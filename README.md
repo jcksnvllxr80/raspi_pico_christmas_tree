@@ -6,7 +6,11 @@
 [![GitHub issues](https://img.shields.io/github/issues/jcksnvllxr80/raspi_pico_christmas_tree.svg)](lib-issues)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](lib-licence)
 
-## Image of project in its current phase (WIP)
+## Imagea of project // still a WIP
+
+<p align="center">
+<img src="https://live.staticflickr.com/65535/51725697269_1f4f05c453_k.jpg" width="800">
+</p>
 
 <p align="center">
 <img src="https://live.staticflickr.com/65535/51717997987_277b59fbd0_k.jpg" width="800">
