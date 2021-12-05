@@ -6,7 +6,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/jcksnvllxr80/raspi_pico_christmas_tree.svg)](lib-issues)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](lib-licence)
 
-## Imagea of project // still a WIP
+## Image of project // still a WIP
 
 <p align="center">
 <img src="https://live.staticflickr.com/65535/51725697269_1f4f05c453_k.jpg" width="800">
