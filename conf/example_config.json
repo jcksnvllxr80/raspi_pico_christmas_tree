@@ -1,0 +1,10 @@
+{
+  "wifi": {
+    "ssid": "VGhpcyBpcyBub3QgYSByZWFsIFNTSUQ=",
+    "password": "VGhpcyBpcyBhIG5vdCBhIHJlYWwgUDQkJHcwcmQh"
+  },
+  "time_api": {
+    "host": "worldtimeapi.org",
+    "path": "/api/timezone/America/New_York"
+  }
+}

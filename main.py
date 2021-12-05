@@ -18,10 +18,7 @@ print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("RPi-Pico MicroPython Ver:", sys.version)
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-wifi_ssid = 'RkJJIFN1cnZlaWxsYW5jZSBWYW4gIzc='
-wifi_pw = 'NHBwbDNzKzg0bm40bjQk'
-TIME_URL = "worldtimeapi.org"
-TIME_URL_PATH = "/api/timezone/America/New_York"
+CONFIG_FILE = "conf/config.json"
 STYLE_BYTES = 2
 STYLE_ADDRESS = 0
 # Configure the number of WS2812 LEDs.
@@ -50,6 +47,13 @@ i2c = I2C(0, sda=sda, scl=scl, freq=1000000)
 i2c_devices = i2c.scan()
 print("I2C Devices: {}".format(i2c_devices))
 eeprom = EEPROM_24LC512(i2c, i2c_devices[0])
+
+
+def read_config_file(filename):
+    json_data = None
+    with open(filename) as fp:
+        json_data = ujson.load(fp)
+    return json_data
 
 
 def wifi_led_red():
@@ -94,9 +98,11 @@ def init_esp8266():
 
 def connect_wifi():
     print("Attempting to connect to wifi AP!")
+    ssid = bytes(config["wifi"]["ssid"], 'utf-8')
+    password = bytes(config["wifi"]["password"], 'utf-8')
     connection_status = esp01.connectWiFi(
-        base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
-        base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
+        base64.b64decode(ssid).decode("utf-8"),
+        base64.b64decode(password).decode("utf-8")
     )
     if connection_status in ESP8266_WIFI_CONNECTED:
         print("Successfully connected to the wifi AP!")
@@ -106,7 +112,7 @@ def connect_wifi():
 def get_wifi_conn_status(conn_status):
     if conn_status and conn_status in ESP8266_WIFI_CONNECTED:
         wifi_led_green()
-        query_time_api()
+        query_time_api(config["time_api"]["host"], config["time_api"]["path"])
         # print("wifi connected --> {}".format(conn_status))
     else:
         wifi_led_red()
@@ -130,10 +136,10 @@ def set_rtc(re_match, response_json):
     ))
 
 
-def query_time_api():
-    httpCode, httpRes = esp01.doHttpGet(TIME_URL, TIME_URL_PATH)
+def query_time_api(host, path):
+    httpCode, httpRes = esp01.doHttpGet(host, path)
     if httpRes:
-        print("\nResponse from {} --> {}\n".format(TIME_URL + TIME_URL_PATH, httpRes))
+        print("\nResponse from {} --> {}\n".format(host + path, httpRes))
         json_resp_obj = ujson.loads(str(httpRes))
         print("json obj --> {}\n".format(json_resp_obj))
         datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)'
@@ -145,7 +151,7 @@ def query_time_api():
             print("Error parsing time from http response; cant set RTC.")
     else:
         print("Error; no response from host: {}; cant set RTC."\
-            .format(TIME_URL+TIME_URL_PATH))
+              .format(host+path))
 
 
 def write_style_index_to_eeprom(index):
@@ -153,6 +159,8 @@ def write_style_index_to_eeprom(index):
     print("Style index wrote to EEPROM: {}".format(index))
 
 
+# create dict from config file
+config = read_config_file(CONFIG_FILE)
 # Create an SPI Object and use it for oled display
 oled_timer = Timer()
 # wifi_timer = Timer()
