@@ -93,11 +93,11 @@ def init_esp8266():
 
 
 def connect_wifi():
-    conn_status = esp01.connectWiFi(
+    print("Attempting to connect to wifi AP!")
+    return esp01.connectWiFi(
         base64.b64decode(bytes(wifi_ssid, 'utf-8')).decode("utf-8"),
         base64.b64decode(bytes(wifi_pw, 'utf-8')).decode("utf-8")
     )
-    return get_wifi_conn_status(conn_status)
 
 
 def get_wifi_conn_status(conn_status):
@@ -108,6 +108,7 @@ def get_wifi_conn_status(conn_status):
     else:
         wifi_led_red()
         print("sorry, cant connect to wifi AP! connection --> {}".format(conn_status))
+        conn_status = connect_wifi()
     return conn_status
 
 
@@ -170,7 +171,7 @@ led_string.pixels_show()
 # Create an ESP8266 Object, init, and connect to wifi AP
 esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
 init_esp8266()
-connection = connect_wifi()
+connection = get_wifi_conn_status(connect_wifi())
 
 
 def color_chase(color, wait):
@@ -359,6 +360,6 @@ style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_press_isr)
 oled_timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
-wifi_timer.init(freq=wifi_check_freq, mode=Timer.PERIODIC, callback=update_conn_status)
+# wifi_timer.init(freq=wifi_check_freq, mode=Timer.PERIODIC, callback=update_conn_status)
 while True:
     style_to_func_dict.get(led_style, do_rainbow_cycle)()
