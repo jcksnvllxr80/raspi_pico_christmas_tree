@@ -6,7 +6,7 @@ from machine import Pin, SPI, Timer, I2C, RTC
 from EEPROM_24LC512 import EEPROM_24LC512
 from ssd1306 import SSD1306_SPI
 import framebuf
-from utime import sleep_ms
+from utime import sleep_ms, time
 import img_utils
 from neopixel import Neopixel
 import random
@@ -19,6 +19,7 @@ print("RPi-Pico MicroPython Ver:", sys.version)
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 CONFIG_FILE = "conf/config.json"
+INACTIVITY_TIMER = 7
 STYLE_BYTES = 2
 STYLE_ADDRESS = 0
 # Configure the number of WS2812 LEDs.
@@ -37,19 +38,24 @@ mosi = Pin(19)
 sck = Pin(18)
 fullscreen_px_x = 128  # SSD1306 horizontal resolution
 fullscreen_px_y = 64   # SSD1306 vertical resolution
-digit_px_x = 20
+digit_px_x = 24
 digit_px_y = 32
 colon_px_x = 16
-digit_start_y = 24
-tens_hr_digit_start_x = 8
-ones_hr_digit_start_x = 36
+date_start_x = 0
+date_start_y = 0
+digit_start_y = 16
+tens_hr_digit_start_x = 4
+ones_hr_digit_start_x = 32
 colon_start_x = 56
 tens_min_digit_start_x = 72
 ones_min_digit_start_x = 100
+mini_style_start_x = 0 
+mini_style_start_y = 56
 
 button = Pin(15, Pin.IN, Pin.PULL_UP)
 onboard_led = Pin(25, Pin.OUT)
 
+rtc = RTC()
 sda = Pin(12)
 scl = Pin(13)
 i2c = I2C(0, sda=sda, scl=scl, freq=1000000)
@@ -133,7 +139,7 @@ def set_rtc(re_match, response_json):
     date_formatted_str = re_match.group(0).replace("T", "-")\
         .replace(":", "-").replace(".", "-").split("-")
     time_list = list(map(int, date_formatted_str))
-    RTC().datetime((
+    rtc.datetime((
         time_list[0],
         time_list[1],
         time_list[2],
@@ -204,7 +210,10 @@ def color_chase(color, wait):
 
 
 def update_oled_display(oled_timer):
-    display_image(img_utils.get_img(led_style))
+    if (time() - last_button_press) < INACTIVITY_TIMER:
+        display_image(img_utils.get_img(led_style))
+    else:
+        display_date_and_time()
 
 
 def update_conn_status(wifi_timer):
@@ -214,7 +223,8 @@ def update_conn_status(wifi_timer):
 
 
 def button_press_isr(irq):
-    global onboard_led
+    global last_button_press, onboard_led
+    last_button_press = time()
     onboard_led.on()
     go_to_next_style()
     onboard_led.off()
@@ -371,42 +381,53 @@ def display_image(byte_array):
     oled.show()
 
 
-def get_date_string():
-    pass
+def get_date_string(now):
+    year = str(now[0])
+    month = img_utils.months_dict[now[1]]
+    day = str(now[2])
+    day_of_wk = img_utils.days_dict[now[3]]
+    return ''.join([day_of_wk, ', ', month, ' ', day, ', ', year])
 
 
-def get_time():
-    pass
+def get_time_tuple(now):
+    hours = now[4]
+    minutes = now[5]
+    return (int(hours / 10), hours % 10, int(minutes / 10), minutes % 10)
 
 
 def display_date_and_time():
-    get_date_string()
-    get_time()
+    current_time = rtc.datetime()
     # Clear oled display
     oled.fill(0)
-    create_date_image()
-    create_time_image()
+    create_date_text(get_date_string(current_time))
+    create_time_image(get_time_tuple(current_time))
+    create_style_text(led_style)
     oled.show()
 
 
-def create_date_image():
-    pass
+def create_style_text(style_str):
+    oled.text(': '.join(['LEDs', style_str]), mini_style_start_x, mini_style_start_y)
 
 
-def create_time_image(tens_hr, ones_hr, tens_min, ones_min):
+def create_date_text(date_str):
+    oled.text(date_str, date_start_x, date_start_y)
+
+
+def create_time_image(digits_tuple):
+    (tens_hr, ones_hr, tens_min, ones_min) = digits_tuple
     # load frame buffs for time image
     tens_hr_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[tens_hr], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
     ones_hr_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[ones_hr], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
     colon_fb = framebuf.FrameBuffer(img_utils.colon_ba, colon_px_x, digit_px_y, framebuf.MONO_HLSB)
     tens_min_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[tens_min], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
     ones_min_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[ones_min], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
-    
     # add image chunks
     oled.blit(tens_hr_fb, tens_hr_digit_start_x, digit_start_y)
     oled.blit(ones_hr_fb, ones_hr_digit_start_x, digit_start_y)
     oled.blit(colon_fb, colon_start_x, digit_start_y)
     oled.blit(tens_min_fb, tens_min_digit_start_x, digit_start_y)
     oled.blit(ones_min_fb, ones_min_digit_start_x, digit_start_y)
+
 
 style_func_list = [
     do_rainbow_cycle, do_chase, do_fill, do_off, do_red, 
@@ -418,5 +439,6 @@ show_current_style(led_style)
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_press_isr)
 oled_timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
 # wifi_timer.init(freq=wifi_check_freq, mode=Timer.PERIODIC, callback=update_conn_status)
+last_button_press = time()
 while True:
     style_to_func_dict.get(led_style, do_rainbow_cycle)()
