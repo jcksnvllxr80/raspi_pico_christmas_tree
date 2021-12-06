@@ -388,9 +388,9 @@ def display_image(byte_array):
 def get_date_string(now):
     year = str(now[0])
     month = img_utils.months_dict[now[1]]
-    day = str(now[2])
+    day = now[2]
     day_of_wk = img_utils.days_dict[now[3]]
-    return ''.join([day_of_wk, ', ', month, '{:2}'.format(day), ', ', year])
+    return ''.join([day_of_wk, ', ', "{0}{1:2}".format(month, day), ', ', year])
 
 
 def get_time_tuple(now):
