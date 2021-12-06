@@ -197,7 +197,7 @@ led_string = Neopixel(led_data_pin, NUM_LEDS, brightness)
 led_string.clear_pixels()
 led_string.pixels_show()
 # Create an ESP8266 Object, init, and connect to wifi AP
-esp01 = ESP8266(uart_port, uart_baud, uart_tx_pin, uart_rx_pin)
+esp01 = ESP8266(uart_port, UART_BAUD, uart_tx_pin, uart_rx_pin)
 init_esp8266()
 connection = get_wifi_conn_status(connect_wifi())
 
