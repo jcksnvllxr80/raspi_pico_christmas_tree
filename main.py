@@ -35,8 +35,17 @@ rst = Pin(20)
 cs = Pin(16)
 mosi = Pin(19)
 sck = Pin(18)
-pix_res_x = 128  # SSD1306 horizontal resolution
-pix_res_y = 64   # SSD1306 vertical resolution
+fullscreen_px_x = 128  # SSD1306 horizontal resolution
+fullscreen_px_y = 64   # SSD1306 vertical resolution
+digit_px_x = 20
+digit_px_y = 32
+colon_px_x = 16
+digit_start_y = 24
+tens_hr_digit_start_x = 8
+ones_hr_digit_start_x = 36
+colon_start_x = 56
+tens_min_digit_start_x = 72
+ones_min_digit_start_x = 100
 
 button = Pin(15, Pin.IN, Pin.PULL_UP)
 onboard_led = Pin(25, Pin.OUT)
@@ -166,7 +175,7 @@ oled_timer = Timer()
 # wifi_timer = Timer()
 # spi = SPI(0, 100000, mosi=mosi, sck=sck)
 spi = SPI(0, 115200, mosi=mosi, sck=sck)
-oled = SSD1306_SPI(pix_res_x, pix_res_y, spi, dc, rst, cs)
+oled = SSD1306_SPI(fullscreen_px_x, fullscreen_px_y, spi, dc, rst, cs)
 # initialize LED string stuff
 led_style_list = img_utils.get_style_list()
 style_index = int.from_bytes(eeprom.read(STYLE_ADDRESS, STYLE_BYTES), 'big')
@@ -355,12 +364,49 @@ def do_flash():
 
 def display_image(byte_array):
     # Load image into the framebuffer64)
-    fb = framebuf.FrameBuffer(byte_array, pix_res_x, pix_res_y, framebuf.MONO_HLSB)
+    fb = framebuf.FrameBuffer(byte_array, fullscreen_px_x,fullscreen_px_y, framebuf.MONO_HLSB)
     # Clear oled display
     oled.fill(0)
     oled.blit(fb, 1, 1)
     oled.show()
 
+
+def get_date_string():
+    pass
+
+
+def get_time():
+    pass
+
+
+def display_date_and_time():
+    get_date_string()
+    get_time()
+    # Clear oled display
+    oled.fill(0)
+    create_date_image()
+    create_time_image()
+    oled.show()
+
+
+def create_date_image():
+    pass
+
+
+def create_time_image(tens_hr, ones_hr, tens_min, ones_min):
+    # load frame buffs for time image
+    tens_hr_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[tens_hr], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
+    ones_hr_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[ones_hr], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
+    colon_fb = framebuf.FrameBuffer(img_utils.colon_ba, colon_px_x, digit_px_y, framebuf.MONO_HLSB)
+    tens_min_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[tens_min], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
+    ones_min_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[ones_min], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
+    
+    # add image chunks
+    oled.blit(tens_hr_fb, tens_hr_digit_start_x, digit_start_y)
+    oled.blit(ones_hr_fb, ones_hr_digit_start_x, digit_start_y)
+    oled.blit(colon_fb, colon_start_x, digit_start_y)
+    oled.blit(tens_min_fb, tens_min_digit_start_x, digit_start_y)
+    oled.blit(ones_min_fb, ones_min_digit_start_x, digit_start_y)
 
 style_func_list = [
     do_rainbow_cycle, do_chase, do_fill, do_off, do_red, 
