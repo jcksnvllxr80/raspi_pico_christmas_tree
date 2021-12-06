@@ -390,7 +390,7 @@ def get_date_string(now):
     month = img_utils.months_dict[now[1]]
     day = str(now[2])
     day_of_wk = img_utils.days_dict[now[3]]
-    return ''.join([day_of_wk, ', ', month, ' ', day, ', ', year])
+    return ''.join([day_of_wk, ', ', month, '{:2}'.format(day), ', ', year])
 
 
 def get_time_tuple(now):
