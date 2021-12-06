@@ -26,6 +26,7 @@ I2C_FREQ = 1_000_000
 SPI_FREQ = 115_200
 SPI_PORT = 0
 UART_BAUD = 115200
+COLON = ':'
 uart_port = 1
 uart_tx_pin = 4
 uart_rx_pin = 5
@@ -58,6 +59,8 @@ tens_min_digit_start_x = 72
 ones_min_digit_start_x = 100
 mini_style_start_x = 0 
 mini_style_start_y = 56
+none_px_x = 8
+none_px_y = 1
 
 button = Pin(15, Pin.IN, Pin.PULL_UP)
 onboard_led = Pin(25, Pin.OUT)
@@ -214,7 +217,7 @@ def color_chase(color, wait):
 
 def update_oled_display(oled_timer):
     if (time() - last_button_press) < INACTIVITY_TIMER:
-        display_image(img_utils.get_img(led_style))
+        display_image(img_utils.get_style_img(led_style))
     else:
         display_date_and_time()
 
@@ -378,7 +381,7 @@ def do_flash():
 
 def display_image(byte_array):
     # Load image into the framebuffer64)
-    fb = framebuf.FrameBuffer(byte_array, fullscreen_px_x,fullscreen_px_y, framebuf.MONO_HLSB)
+    fb = get_frame_buffer(byte_array, fullscreen_px_x,fullscreen_px_y)
     # Clear oled display
     oled.fill(0)
     oled.blit(fb, 1, 1)
@@ -387,9 +390,9 @@ def display_image(byte_array):
 
 def get_date_string(now):
     year = str(now[0])
-    month = img_utils.months_dict[now[1]]
+    month = img_utils.get_month(now[1])
     day = now[2]
-    day_of_wk = img_utils.days_dict[now[3]]
+    day_of_wk = img_utils.get_day_of_week(now[3])
     return ''.join([day_of_wk, ', ', "{0}{1:2}".format(month, day), ', ', year])
 
 
@@ -417,14 +420,21 @@ def create_date_text(date_str):
     oled.text(date_str, date_start_x, date_start_y)
 
 
+def get_frame_buffer(img_ba, x_px, y_px):
+    if img_ba is None:
+        return framebuf.FrameBuffer(img_utils.get_time_img(None), none_px_x, none_px_y, framebuf.MONO_HLSB)
+    else:
+        return framebuf.FrameBuffer(img_ba, x_px, y_px, framebuf.MONO_HLSB)
+
+
 def create_time_image(digits_tuple):
     (tens_hr, ones_hr, tens_min, ones_min) = digits_tuple
     # load frame buffs for time image
-    tens_hr_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[tens_hr], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
-    ones_hr_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[ones_hr], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
-    colon_fb = framebuf.FrameBuffer(img_utils.colon_ba, colon_px_x, digit_px_y, framebuf.MONO_HLSB)
-    tens_min_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[tens_min], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
-    ones_min_fb = framebuf.FrameBuffer(img_utils.num_ba_dict[ones_min], digit_px_x, digit_px_y, framebuf.MONO_HLSB)
+    tens_hr_fb = get_frame_buffer(img_utils.get_time_img(tens_hr), digit_px_x, digit_px_y)
+    ones_hr_fb = get_frame_buffer(img_utils.get_time_img(ones_hr), digit_px_x, digit_px_y)
+    colon_fb = get_frame_buffer(img_utils.get_time_img(COLON), colon_px_x, digit_px_y)
+    tens_min_fb = get_frame_buffer(img_utils.get_time_img(tens_min), digit_px_x, digit_px_y)
+    ones_min_fb = get_frame_buffer(img_utils.get_time_img(ones_min), digit_px_x, digit_px_y)
     # add image chunks
     oled.blit(tens_hr_fb, tens_hr_digit_start_x, digit_start_y)
     oled.blit(ones_hr_fb, ones_hr_digit_start_x, digit_start_y)
