@@ -47,6 +47,7 @@ The following classes (which are all in this repo) must be manually loaded onto 
 - finish PCB
 - make rainbow top to bottom
 - make a chase from top to bottom
+- overlay chase (on and off) over rainbow
 
 ### Template for code
 
