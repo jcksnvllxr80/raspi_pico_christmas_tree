@@ -22,6 +22,13 @@ CONFIG_FILE = "conf/config.json"
 INACTIVITY_TIMER = 7
 STYLE_BYTES = 2
 STYLE_ADDRESS = 0
+I2C_FREQ = 1_000_000
+SPI_FREQ = 115_200
+SPI_PORT = 0
+UART_BAUD = 115200
+uart_port = 1
+uart_tx_pin = 4
+uart_rx_pin = 5
 # Configure the number of WS2812 LEDs.
 NUM_LEDS = 33
 led_data_pin = Pin(22)
@@ -30,7 +37,7 @@ grn_wifi_led = Pin(10, Pin.OUT)
 red_wifi_led = Pin(11, Pin.OUT)
 brightness = 0.5
 oled_fps = 5
-wifi_check_freq = 0.017
+wifi_check_per =3_600_000
 dc = Pin(17)
 rst = Pin(20)
 cs = Pin(16)
@@ -58,7 +65,7 @@ onboard_led = Pin(25, Pin.OUT)
 rtc = RTC()
 sda = Pin(12)
 scl = Pin(13)
-i2c = I2C(0, sda=sda, scl=scl, freq=1000000)
+i2c = I2C(0, sda=sda, scl=scl, freq=I2C_FREQ)
 i2c_devices = i2c.scan()
 print("I2C Devices: {}".format(i2c_devices))
 eeprom = EEPROM_24LC512(i2c, i2c_devices[0])
@@ -83,10 +90,6 @@ def wifi_led_green():
 
 connection = ""
 wifi_led_red()
-uart_port = 1
-uart_tx_pin = 4
-uart_rx_pin = 5
-uart_baud = 115200
 
 
 def init_esp8266():
@@ -178,9 +181,9 @@ def write_style_index_to_eeprom(index):
 config = read_config_file(CONFIG_FILE)
 # Create an SPI Object and use it for oled display
 oled_timer = Timer()
-# wifi_timer = Timer()
+wifi_timer = Timer()
 # spi = SPI(0, 100000, mosi=mosi, sck=sck)
-spi = SPI(0, 115200, mosi=mosi, sck=sck)
+spi = SPI(SPI_PORT, SPI_FREQ, mosi=mosi, sck=sck)
 oled = SSD1306_SPI(fullscreen_px_x, fullscreen_px_y, spi, dc, rst, cs)
 # initialize LED string stuff
 led_style_list = img_utils.get_style_list()
@@ -218,8 +221,9 @@ def update_oled_display(oled_timer):
 
 def update_conn_status(wifi_timer):
     global connection
-    if esp01.getConnectionStatus() not in ESP8266_WIFI_CONNECTED:
-        connection = get_wifi_conn_status(connect_wifi())
+    if rtc.datetime()[4] == 3:
+        if esp01.getConnectionStatus() not in ESP8266_WIFI_CONNECTED:
+            connection = get_wifi_conn_status(connect_wifi())
 
 
 def button_press_isr(irq):
@@ -438,7 +442,7 @@ style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_press_isr)
 oled_timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
-# wifi_timer.init(freq=wifi_check_freq, mode=Timer.PERIODIC, callback=update_conn_status)
+wifi_timer.init(period=wifi_check_per, mode=Timer.PERIODIC, callback=update_conn_status)
 last_button_press = time()
 while True:
     style_to_func_dict.get(led_style, do_rainbow_cycle)()
