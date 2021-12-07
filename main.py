@@ -269,6 +269,20 @@ def do_chase():
             return
 
 
+def do_chasebow():
+    for j in range(255):
+        mask = j % 2
+        for i in range(NUM_LEDS):
+            rc_index = int(i * 255 / NUM_LEDS) + j*16
+            color = Neopixel.wheel(rc_index & 255)
+            led_string.pixels_set(i, (color[0]*mask, color[1]*mask, color[2]*mask))
+            sleep_ms(20)
+            led_string.pixels_show()
+            if not led_style == "chasebow":
+                return
+        sleep_ms(10)
+
+
 def solid_color(color, style_compare_str):
     led_string.pixels_fill(color)
     led_string.pixels_show()
@@ -446,7 +460,7 @@ def create_time_image(digits_tuple):
 style_func_list = [
     do_rainbow_cycle, do_chase, do_fill, do_off, do_red, 
     do_yellow, do_green, do_cyan, do_blue, do_purple, do_white,
-    do_firefly, do_blend, do_flash
+    do_firefly, do_blend, do_flash, do_chasebow
 ]
 style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
