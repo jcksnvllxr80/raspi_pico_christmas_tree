@@ -1,0 +1,11 @@
+Reference, Quantity, Value, Footprint, Datasheet, MANUFACTURER, MAXIMUM_PACKAGE_HEIGHT, PARTREV, STANDARD
+C1 ,1,"C","Capacitors_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm","~"
+D1 ,1,"LED_ACA","LEDs:LED_D5.0mm-3","~"
+J1 ,1,"PWR","Connectors:BARREL_JACK","~"
+J2 ,1,"WS8212","def-footprints:CONN_HEADER_1_3","~"
+J3 ,1,"SSD1306","Pin_Headers:Pin_Header_Straight_1x07_Pitch2.54mm","~"
+R5 R4 R1 R2 R3 ,5,"R","Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal","~"
+SW1 ,1,"Button","stomp:Switches-Push_switch_THD","~"
+U1 ,1,"ESP-01","esp01:ESP-01","","AI-Thinker","11.2 mm","V1.2","Manufacturer recommendations or IPC 7351B"
+U2 ,1,"RaspiPico","raspberrypi_pico:MODULE_SC0915","","Raspberry Pi","3.73mm","1.6","Manufacturer Recommendations"
+U3 ,1,"24LC512","Housings_DIP:DIP-8_W7.62mm","http://ww1.microchip.com/downloads/en/DeviceDoc/21754M.pdf"
