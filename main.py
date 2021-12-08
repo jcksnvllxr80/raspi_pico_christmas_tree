@@ -30,8 +30,20 @@ COLON = ':'
 uart_port = 1
 uart_tx_pin = 4
 uart_rx_pin = 5
-# Configure the number of WS2812 LEDs.
-NUM_LEDS = 33
+# Configure the number/order of WS2812 LEDs.
+ROW0 = [18, 19, 20, 21, 22, 23, 24, 25]
+ROW1 = [15, 16, 17, 26, 27, 28]
+ROW2 = [12, 13, 14, 29,30, 31]
+ROW3 = [10, 11, 32, 33]
+ROW4 = [1, 2, 8, 9]
+ROW5 = [3, 7]
+ROW6 = [4, 6]
+ROW7 = [5]
+ROWS_BTM_2_TOP = [ROW0, ROW1, ROW2, ROW3, ROW4, ROW5, ROW6, ROW7]
+ROWS_TOP_2_BTM = ROWS_BTM_2_TOP[::-1]
+NUM_ROWS = len(ROWS_BTM_2_TOP)
+NUM_LEDS = sum(len(x) for x in ROWS_BTM_2_TOP)
+
 led_data_pin = Pin(22)
 # configure wifi led pins for wifi user feedback
 grn_wifi_led = Pin(10, Pin.OUT)
@@ -95,6 +107,23 @@ connection = ""
 wifi_led_red()
 
 
+def get_frame_buffer(img_ba, x_px, y_px):
+    if img_ba is None:
+        return framebuf.FrameBuffer(img_utils.get_time_img(None), none_px_x, none_px_y, framebuf.MONO_HLSB)
+    else:
+        return framebuf.FrameBuffer(img_ba, x_px, y_px, framebuf.MONO_HLSB)
+
+
+def display_image(byte_array=None):
+    if byte_array:
+        # Load image into the framebuffer64)
+        fb = get_frame_buffer(byte_array, fullscreen_px_x, fullscreen_px_y)
+        # Clear oled display
+        oled.fill(0)
+        oled.blit(fb, 1, 1)
+        oled.show()
+
+
 def init_esp8266():
     esp8266_at_ver = None
     print("StartUP", esp01.startUP())
@@ -118,6 +147,7 @@ def init_esp8266():
 
 
 def connect_wifi():
+    display_image(img_utils.get_system_ba("wifi"))
     print("Attempting to connect to wifi AP!")
     ssid = bytes(config["wifi"]["ssid"], 'utf-8')
     password = bytes(config["wifi"]["password"], 'utf-8')
@@ -130,10 +160,16 @@ def connect_wifi():
     return connection_status
 
 
-def get_wifi_conn_status(conn_status):
+def get_wifi_conn_status(conn_status, bool_query_time):
     if conn_status and conn_status in ESP8266_WIFI_CONNECTED:
         wifi_led_green()
-        query_time_api(config["time_api"]["host"], config["time_api"]["path"])
+        if bool_query_time:
+            display_image(img_utils.get_system_ba("set_time"))
+            query_time_api(config["time_api"]["host"], config["time_api"]["path"])
+            # check again here because usually the esp01 loses its wifi connection
+            # after getting an http response, this time send false as to not check
+            # the time again
+            conn_status = get_wifi_conn_status(esp01.getConnectionStatus(), False)
         # print("wifi connected --> {}".format(conn_status))
     else:
         wifi_led_red()
@@ -184,10 +220,10 @@ def write_style_index_to_eeprom(index):
 config = read_config_file(CONFIG_FILE)
 # Create an SPI Object and use it for oled display
 oled_timer = Timer()
-wifi_timer = Timer()
-# spi = SPI(0, 100000, mosi=mosi, sck=sck)
 spi = SPI(SPI_PORT, SPI_FREQ, mosi=mosi, sck=sck)
 oled = SSD1306_SPI(fullscreen_px_x, fullscreen_px_y, spi, dc, rst, cs)
+display_image(img_utils.get_system_ba("hello"))
+
 # initialize LED string stuff
 led_style_list = img_utils.get_style_list()
 style_index = int.from_bytes(eeprom.read(STYLE_ADDRESS, STYLE_BYTES), 'big')
@@ -200,19 +236,10 @@ led_string = Neopixel(led_data_pin, NUM_LEDS, brightness)
 led_string.clear_pixels()
 led_string.pixels_show()
 # Create an ESP8266 Object, init, and connect to wifi AP
+wifi_timer = Timer()
 esp01 = ESP8266(uart_port, UART_BAUD, uart_tx_pin, uart_rx_pin)
 init_esp8266()
-connection = get_wifi_conn_status(connect_wifi())
-
-
-def color_chase(color, wait):
-    for i in range(NUM_LEDS):
-        led_string.pixels_set(i, color)
-        sleep_ms(wait)
-        led_string.pixels_show()
-        if not led_style == "chase":
-            break
-    sleep_ms(20)
+connection = get_wifi_conn_status(connect_wifi(), True)
 
 
 def update_oled_display(oled_timer):
@@ -226,7 +253,7 @@ def update_conn_status(wifi_timer):
     global connection
     if rtc.datetime()[4] == 3:
         if esp01.getConnectionStatus() not in ESP8266_WIFI_CONNECTED:
-            connection = get_wifi_conn_status(connect_wifi())
+            connection = get_wifi_conn_status(connect_wifi(), True)
 
 
 def button_press_isr(irq):
@@ -262,10 +289,69 @@ def do_rainbow_cycle(wait=20):
         sleep_ms(wait)
 
 
+def color_chase(color, wait):
+    for i in range(NUM_LEDS):
+        led_string.pixels_set(i, color)
+        sleep_ms(wait)
+        led_string.pixels_show()
+        if not led_style == "chase":
+            break
+    sleep_ms(20)
+
+
+def vertical_color_chase(color, wait, dir, rows):
+    chase_direction = ''.join([dir, "-cha"])
+    for i in range(NUM_ROWS):
+        [led_string.pixels_set(led-1, color) for led in rows[i]]
+        sleep_ms(wait)
+        led_string.pixels_show()
+        if not led_style == chase_direction:
+            return
+    sleep_ms(20)
+
+
+def do_rainbow_ttb(wait=10):
+    # rows need to be traversed in opposite dir of rainbow
+    vertical_rainbow(wait, "ttb", ROWS_BTM_2_TOP)
+
+
+def do_rainbow_btt(wait=10):
+    # rows need to be traversed in opposite dir of rainbow
+    vertical_rainbow(wait, "btt", ROWS_TOP_2_BTM)
+
+
+def vertical_rainbow(wait, dir, rows):
+    bow_direction = ''.join([dir, "-bow"])
+    for j in range(255):
+        for i in range(NUM_ROWS):
+            rc_index = int(i * 255 / NUM_ROWS) + j
+            [led_string.pixels_set(led-1, Neopixel.wheel(rc_index & 255)) for led in rows[i]]
+        led_string.pixels_show()
+        if not led_style == bow_direction:
+            break
+        sleep_ms(wait)
+
+
 def do_chase():
-    for color in led_string.COLORS:
+    for color in led_string.get_colors():
         color_chase(color, 10)
         if not led_style == "chase":
+            return
+
+
+def do_chase_ttb():
+    vertical_chase("ttb", ROWS_TOP_2_BTM)
+
+
+def do_chase_btt():
+    vertical_chase("btt", ROWS_BTM_2_TOP)
+
+
+def vertical_chase(dir, rows, wait=45):
+    chase_direction = ''.join([dir, "-cha"])
+    for color in led_string.get_colors():
+        vertical_color_chase(color, wait, dir, rows)
+        if not led_style == chase_direction:
             return
 
 
@@ -332,7 +418,7 @@ def do_white():
 
 
 def do_firefly():
-    colors = led_string.FIREFLY_COLORS
+    colors = led_string.get_firefly_colors()
     max_len = 20
     min_len = 5
     #pixelnum, posn in flash, flash_len, direction
@@ -393,15 +479,6 @@ def do_flash():
                 return
 
 
-def display_image(byte_array):
-    # Load image into the framebuffer64)
-    fb = get_frame_buffer(byte_array, fullscreen_px_x,fullscreen_px_y)
-    # Clear oled display
-    oled.fill(0)
-    oled.blit(fb, 1, 1)
-    oled.show()
-
-
 def get_date_string(now):
     year = str(now[0])
     month = img_utils.get_month(now[1])
@@ -434,13 +511,6 @@ def create_date_text(date_str):
     oled.text(date_str, date_start_x, date_start_y)
 
 
-def get_frame_buffer(img_ba, x_px, y_px):
-    if img_ba is None:
-        return framebuf.FrameBuffer(img_utils.get_time_img(None), none_px_x, none_px_y, framebuf.MONO_HLSB)
-    else:
-        return framebuf.FrameBuffer(img_ba, x_px, y_px, framebuf.MONO_HLSB)
-
-
 def create_time_image(digits_tuple):
     (tens_hr, ones_hr, tens_min, ones_min) = digits_tuple
     # load frame buffs for time image
@@ -460,7 +530,8 @@ def create_time_image(digits_tuple):
 style_func_list = [
     do_rainbow_cycle, do_chase, do_fill, do_off, do_red, 
     do_yellow, do_green, do_cyan, do_blue, do_purple, do_white,
-    do_firefly, do_blend, do_flash, do_chasebow
+    do_firefly, do_blend, do_flash, do_chasebow, do_rainbow_ttb,
+    do_rainbow_btt, do_chase_ttb, do_chase_btt
 ]
 style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)

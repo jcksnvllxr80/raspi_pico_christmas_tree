@@ -36,6 +36,13 @@ class Neopixel:
         (50, 200, 10)
     ]
 
+    def get_colors(self):
+        return self.COLORS
+
+
+    def get_firefly_colors(self):
+        return self.FIREFLY_COLORS
+
 
     def __init__(self, data_pin, num_leds, brightness):
         self._brightness = brightness

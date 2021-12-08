@@ -44,8 +44,8 @@ The following classes (which are all in this repo) must be manually loaded onto 
 
 ## TODO
 
-- make rainbow top to bottom
-- make a chase from top to bottom
+- use various waveforms to mask the brightness of the strip... i.e. cos, tan, sawtooth, triangle
+- similarly to above, mask the waveforms along the time domain
 
 ### Template for code
 
