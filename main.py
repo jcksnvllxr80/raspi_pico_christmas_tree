@@ -48,7 +48,7 @@ led_data_pin = Pin(22)
 # configure wifi led pins for wifi user feedback
 grn_wifi_led = Pin(10, Pin.OUT)
 red_wifi_led = Pin(11, Pin.OUT)
-brightness = 0.5
+brightness = 0.2
 oled_fps = 5
 wifi_check_per =3_600_000
 dc = Pin(17)
