@@ -69,7 +69,7 @@ class ESP8266:
         """
         self.__rxData = str()
         self.__txData = atCMD
-        #print("---------------------------"+self.__txData)
+        print("---------------------------"+self.__txData)
         self.__uartObj.write(self.__txData)
         self.__rxData = bytes()
 
@@ -406,7 +406,7 @@ class ESP8266:
         """
         retData = self._sendToESP8266("AT+CIPSTATUS\r\n")
         if retData:
-            # print("Returned from \'AT+CIPSTATUS\': {}".format(retData))
+            print("Returned from \'AT+CIPSTATUS\': {}".format(retData))
             if "STATUS:2" in retData.decode("utf-8"):
                 return ESP8266_WIFI_CONNECTED
             else:
@@ -478,6 +478,7 @@ class ESP8266:
             #print(getHeader,len(getHeader))
             txData = "AT+CIPSEND="+str(len(getHeader))+"\r\n"
             retData = self._sendToESP8266(txData)
+            print('response: {}'.format(retData))
             if(retData != None):
                 if ">" in retData:
                     retData = self._sendToESP8266(getHeader, delay=2)
