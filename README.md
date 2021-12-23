@@ -47,10 +47,37 @@ The following classes (which are all in this repo) must be manually loaded onto 
 - use various waveforms to mask the brightness of the strip... i.e. cos, tan, sawtooth, triangle
 - similarly to above, mask the waveforms along the time domain
 
-### Template for code
+### USE THONNY TO WRITE THE FOLLOWING CODE TO PI PICO WHICH IS CONTROLLING ESP8266-01
 
 ```python
-from machine import Pin
-from esp8266 import ESP8266
-import time, sys
+from machine import UART, Pin
+user_agent="RPi-Pico"
+host="worldtimeapi.org"
+path="/api/timezone/America/New_York"
+getHeader = "GET "+path+" HTTP/1.1\r\n"+"Host: " + host+"\r\n"+"User-Agent: "+user_agent+"\r\n"+"\r\n"
+txData = "AT+CIPSEND="+str(len(getHeader))+"\r\n"
+UART_Tx_BUFFER_LENGTH = 1024
+UART_Rx_BUFFER_LENGTH = 1024*2
+UART_BAUD = 115_200
+uart_port = 1
+uart_tx_pin = 4
+uart_rx_pin = 5
+esp = UART(uart_port, baudrate=UART_BAUD, tx=Pin(uart_tx_pin), rx=Pin(uart_rx_pin), txbuf=UART_Tx_BUFFER_LENGTH, rxbuf=UART_Rx_BUFFER_LENGTH)
+esp.write('AT\r\n'); esp.read()
+esp.write('AT+GMR\r\n'); esp.read()
+esp.write('ATE1\r\n'); esp.read()
+esp.write('AT+GMR\r\n'); esp.read()
+esp.write('AT+CWMODE_CUR=3\r\n'); esp.read()
+esp.write('AT+CWJAP_CUR="<YOUR_SSID>","<YOUR_PASSWORD>"\r\n'); esp.read()
+esp.write('AT+CIPSTATUS\r\n'); esp.read()
+esp.write('AT+CIPSTART="TCP","worldtimeapi.org",80\r\n'); esp.read()
+esp.write('AT+CWLIF\r\n'); esp.read()
+esp.write('AT+HTTPCLIENT=1,0,"http://httpbin.org/get","httpbin.org","/get",1\r\n'); esp.read()
+esp.write('AT+CIPSTART="TCP","worldtimeapi.org",80\r\n'); esp.read()
+esp.write("AT+CIPSEND="+str(len(getHeader))+"\r\n"); esp.read()
+esp.write(getHeader); esp.read()
+esp.write("AT+PING=\"google.com\"\r\n"); esp.read()
+esp.write("AT+PING=\"8.8.8.8\"\r\n"); esp.read()
+esp.write("AT+CWJAP?\r\n"); esp.read(); esp.read()
+esp.write("AT+CWQAP\r\n"); esp.read(); esp.read()
 ```
