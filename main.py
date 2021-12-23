@@ -27,6 +27,12 @@ SPI_FREQ = 115_200
 SPI_PORT = 0
 UART_BAUD = 115_200
 COLON = ':'
+OPENING_BRACE = '{'
+CLOSING_BRACE = '}'
+WIFI_CHECK_PERIOD = 3_600_000  # milliseconds (hourly)
+# HOURS_PER_DAY = 24
+# HOURS_TO_SYNC_TIME = list(range(HOURS_PER_DAY))
+# HOUR_POSITION = 4
 uart_port = 1
 uart_tx_pin = 4
 uart_rx_pin = 5
@@ -50,7 +56,6 @@ grn_wifi_led = Pin(10, Pin.OUT)
 red_wifi_led = Pin(11, Pin.OUT)
 brightness = 0.2
 oled_fps = 5
-wifi_check_per =3_600_000
 dc = Pin(17)
 rst = Pin(20)
 cs = Pin(16)
@@ -164,17 +169,18 @@ def get_wifi_conn_status(conn_status, bool_query_time):
     if conn_status and conn_status in ESP8266_WIFI_CONNECTED:
         wifi_led_green()
         if bool_query_time:
-            display_image(img_utils.get_system_ba("set_time"))
-            query_time_api(config["time_api"]["host"], config["time_api"]["path"])
-            # check again here because usually the esp01 loses its wifi connection
-            # after getting an http response, this time send false as to not check
-            # the time again
-            conn_status = get_wifi_conn_status(esp01.getConnectionStatus(), False)
-        # print("wifi connected --> {}".format(conn_status))
+            conn_status = set_time()
+        print("wifi connected --> {}".format(conn_status))
     else:
         wifi_led_red()
         print("sorry, cant connect to wifi AP! connection --> {}".format(conn_status))
     return conn_status
+
+
+def set_time():
+    display_image(img_utils.get_system_ba("set_time"))
+    query_time_api(config["time_api"]["host"], config["time_api"]["path"])
+    status = get_wifi_conn_status(esp01.getWifiAccessPointConnectionStatus(), False)
 
 
 def set_rtc(re_match, response_json):
@@ -193,11 +199,21 @@ def set_rtc(re_match, response_json):
     ))
 
 
+def clean_json(response):
+    if not response[0] == OPENING_BRACE:
+        print("Stripping characters from before the opening brace at the start of the json string: {}".format(response))
+        response = response[response.find('{'):]
+    if not response[-1] == CLOSING_BRACE:
+        print("Stripping characters from after the ending brace of the json string: {}".format(response))
+        response = response[:response.find('}') + 1]
+    return response
+
+
 def query_time_api(host, path):
     httpCode, httpRes = esp01.doHttpGet(host, path)
     if httpRes:
         print("\nResponse from {} --> {}\n".format(host + path, httpRes))
-        json_resp_obj = ujson.loads(str(httpRes))
+        json_resp_obj = ujson.loads(clean_json(str(httpRes)))
         print("json obj --> {}\n".format(json_resp_obj))
         datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)'
         match = re.search(datetime_regex_string, json_resp_obj['datetime'])
@@ -251,9 +267,11 @@ def update_oled_display(oled_timer):
 
 def update_conn_status(wifi_timer):
     global connection
-    if rtc.datetime()[4] == 3:
-        if esp01.getConnectionStatus() not in ESP8266_WIFI_CONNECTED:
-            connection = get_wifi_conn_status(connect_wifi(), True)
+    # if rtc.datetime()[HOUR_POSITION] in HOURS_TO_SYNC_TIME:
+    if esp01.getWifiAccessPointConnectionStatus() not in ESP8266_WIFI_CONNECTED:
+        connection = get_wifi_conn_status(connect_wifi(), True)
+    else:
+        set_time()
 
 
 def button_press_isr(irq):
@@ -537,7 +555,7 @@ style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_press_isr)
 oled_timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
-wifi_timer.init(period=wifi_check_per, mode=Timer.PERIODIC, callback=update_conn_status)
+wifi_timer.init(period=WIFI_CHECK_PERIOD, mode=Timer.PERIODIC, callback=update_conn_status)
 last_button_press = time()
 while True:
     style_to_func_dict.get(led_style, do_rainbow_cycle)()

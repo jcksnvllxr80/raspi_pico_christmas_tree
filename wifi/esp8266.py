@@ -10,7 +10,11 @@ ESP8266_WIFI_GOT_IP_CONNECTED = "WIFI GOT IP\r\n"
 ESP8266_WIFI_DISCONNECTED = "WIFI DISCONNECT\r\n"
 ESP8266_WIFI_AP_NOT_PRESENT = "WIFI AP NOT FOUND\r\n"
 ESP8266_WIFI_AP_WRONG_PWD = "WIFI AP WRONG PASSWORD\r\n"
+ESP8266_TCP_CONNECTED = "TCP CONNECTED\r\n"
+ESP8266_TCP_DISCONNECTED = "TCP CONNECTED\r\n"
 ESP8266_BUSY_STATUS = "busy p...\r\n"
+NO_ACCESS_POINT="NO AP"
+TCP_STATUS_CONNECTED="STATUS:2" 
 UART_Tx_BUFFER_LENGTH = 1024
 UART_Rx_BUFFER_LENGTH = 1024*2
 
@@ -395,7 +399,7 @@ class ESP8266:
         else:
             return False
 
-    def getConnectionStatus(self):
+    def getWifiAccessPointConnectionStatus(self):
         """
         This function is used to check connection status of ESP8266 with its WiFi AccessPoint
         
@@ -404,13 +408,32 @@ class ESP8266:
             WIFI CONNECTED on good connection
             False if no response
         """
-        retData = self._sendToESP8266("AT+CIPSTATUS\r\n")
+        retData = self._sendToESP8266("AT+CWJAP?\r\n")
         if retData:
-            print("Returned from \'AT+CIPSTATUS\': {}".format(retData))
-            if "STATUS:2" in retData.decode("utf-8"):
+            print("Returned from \'AT+CWJAP?\': {}".format(retData))
+            if NO_ACCESS_POINT not in retData.decode("utf-8"):
                 return ESP8266_WIFI_CONNECTED
             else:
                 return ESP8266_WIFI_DISCONNECTED
+        else:
+            return False
+
+    def getTcpConnectionStatus(self):
+        """
+        This function is used to check TCP connection status of ESP8266 
+        
+        Return:
+            TCP DISCONNECTED on no connection to WiFi
+            TCP CONNECTED on good connection
+            False if no response
+        """
+        retData = self._sendToESP8266("AT+CIPSTATUS\r\n")
+        if retData:
+            print("Returned from \'AT+CIPSTATUS\': {}".format(retData))
+            if TCP_STATUS_CONNECTED in retData.decode("utf-8"):
+                return ESP8266_TCP_CONNECTED
+            else:
+                return ESP8266_TCP_DISCONNECTED
         else:
             return False
 
