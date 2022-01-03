@@ -29,6 +29,7 @@ UART_BAUD = 115_200
 COLON = ':'
 OPENING_BRACE = '{'
 CLOSING_BRACE = '}'
+WIFI_MODE = 3
 WIFI_CHECK_PERIOD = 3_600_000  # milliseconds (hourly)
 # HOURS_PER_DAY = 24
 # HOURS_TO_SYNC_TIME = list(range(HOURS_PER_DAY))
@@ -145,7 +146,9 @@ def init_esp8266():
     '''
     set the current WiFi in SoftAP+STA
     '''
-    esp01.setCurrentWiFiMode()
+    esp01.setCurrentWiFiMode(WIFI_MODE)
+    esp01.deviceHostname(config["wifi"]["hostname"])
+    print(esp01.deviceHostname())
     # apList = esp01.getAvailableAPs()
     # for items in apList:
     #    print(items)

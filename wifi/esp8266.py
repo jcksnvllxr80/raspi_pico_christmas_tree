@@ -454,6 +454,31 @@ class ESP8266:
         else:
             return False
 
+    def deviceHostname(self,hostname=None):
+        """
+        This function is used to set a hostname for ESP8266
+        
+        Return:
+            False on failed to set hostname
+            True on successfully set hostname
+        """
+        if hostname:
+            retData = self._sendToESP8266("AT+CWHOSTNAME=\"{}\"\r\n".format(hostname))
+            if(retData != None):
+                print(str(retData))
+                if ESP8266_OK_STATUS in retData:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            retData = self._sendToESP8266("AT+CWHOSTNAME?\r\n")
+            if(retData != None):
+                return str(retData)
+            else:
+                return False
+
     def _createTCPConnection(self, link, port=80):
         """
         This function is used to create connect between ESP8266 and Host.

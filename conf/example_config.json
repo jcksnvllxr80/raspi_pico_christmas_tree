@@ -1,7 +1,8 @@
 {
   "wifi": {
     "ssid": "VGhpcyBpcyBub3QgYSByZWFsIFNTSUQ=",
-    "password": "VGhpcyBpcyBhIG5vdCBhIHJlYWwgUDQkJHcwcmQh"
+    "password": "VGhpcyBpcyBhIG5vdCBhIHJlYWwgUDQkJHcwcmQh",
+    "hostname": "pico-led-tree"
   },
   "time_api": {
     "host": "worldtimeapi.org",
