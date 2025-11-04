@@ -32,17 +32,32 @@ eight_ba = bytearray(b'\x00\x00\x00\x03\xfc\x00\x03\xfc\x00\x1f\xff\x80\x3e\x0f\
 nine_ba = bytearray(b'\x00\x00\x00\x03\xfc\x00\x03\xfc\x00\x0f\xff\x00\x3e\x0f\x80\x3e\x0f\x80\x3e\x0f\x80\x3c\x0f\x80\x7c\x03\xe0\x7c\x03\xe0\x7c\x03\xe0\x7c\x03\xe0\x7c\x03\xe0\x7c\x03\xe0\x7c\x03\xe0\x3e\x0f\xe0\x3f\xff\xe0\x3f\xff\xe0\x3f\xff\xe0\x07\xe3\xe0\x00\x0f\x80\x00\x0f\x80\x00\x0f\x80\x00\x0f\x00\x00\x1f\x00\x00\x7e\x00\x00\x7e\x00\x07\xf0\x00\x07\xf0\x00\x07\xc0\x00\x00\x00\x00\x00\x00\x00')  # '9', 24x32px
 colon_ba = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x07\xc0\x07\xc0\x07\xc0\x07\xc0\x07\xc0\x07\xc0\x07\xc0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07\xc0\x07\xc0\x07\xc0\x07\xc0\x07\xc0\x07\xc0\x07\xc0\x00\x00\x00\x00\x00\x00\x00\x00')  # 'colon', 16x32px
 none_ba = bytearray(b'\x00')  # '', 8x1px
+
 led_style_list = [
-    "rainbow", "chase", "fill", "off", "red", "yellow", "green", "cyan", "blue", "purple",
-    "white", "firefly", "blend", "flash", "chasebow", "ttb-bow", "btt-bow", "ttb-cha", "btt-cha"
+    "rainbow", 
+    "chase", 
+    "fill", 
+    "off", 
+    "red", 
+    "yellow", 
+    "green", 
+    "cyan", 
+    "blue", 
+    "purple",
+    "white", 
+    "firefly", 
+    "blend", 
+    "flash", 
+    "chasebow", 
+    "ttb-bow", 
+    "btt-bow", 
+    "ttb-cha", 
+    "btt-cha"
 ]
 
 sys_ba_dict = {
-    "hello": hello_ba,
-    "wifi": wifi_ba,
-    "set_time": set_time_ba
+    "hello": hello_ba
 }
-
 
 style_ba_dict = {
     led_style_list[0]: rainbow_ba,
@@ -66,46 +81,6 @@ style_ba_dict = {
     led_style_list[18]: btt_chase_ba
 }
 
-time_ba_dict = {
-    ":": colon_ba,
-    0: zero_ba,
-    1: one_ba,
-    2: two_ba,
-    3: three_ba,
-    4: four_ba,
-    5: five_ba,
-    6: six_ba,
-    7: seven_ba,
-    8: eight_ba,
-    9: nine_ba,
-    None: none_ba 
-}
-
-months_dict = {
-    1: "Jan",
-    2: "Feb",
-    3: "Mar",
-    4: "Apr",
-    5: "May",
-    6: "Jun",
-    7: "Jul",
-    8: "Aug",
-    9: "Sep",
-    10: "Oct",
-    11: "Nov",
-    12: "Dec"
-}
-
-days_dict = {
-    0: "Mon",
-    1: "Tue",
-    2: "Wed",
-    3: "Thu",
-    4: "Fri",
-    5: "Sat",
-    6: "Sun"
-}
-
 
 def get_style_list():
     return led_style_list
@@ -113,18 +88,6 @@ def get_style_list():
 
 def get_style_img(string_id):
     return style_ba_dict.get(string_id, rainbow_ba)
-
-
-def get_time_img(id):
-    return time_ba_dict.get(id, None)
-
-
-def get_month(month_id):
-    return months_dict.get(month_id, month_id)
-
-
-def get_day_of_week(day_of_week_id):
-    return days_dict.get(day_of_week_id, str(day_of_week_id))
 
 
 def get_system_ba(id):

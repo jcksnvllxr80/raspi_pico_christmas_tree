@@ -18,16 +18,13 @@
 
 ## Description
 
-This project was designed for a decorative Christmas tree made out of cedar which stands about two feet in height. It consists of a Raspberry Pi Pico, a string of ws2812 neopixels, a 128x64 pixel (model: SSD1306) OLED display, an EEPROM (model: 24LC512), a standard push-button, and a esp8266 esp-01 module. The string of lights serve as the lights on the wooden Christmas tree and are controlled by one wire sending data in series to the lights. each new received value pushes the previous down the line to the next light. The different patterns of the lights are cycled through by pressing the push-button. The OLED display communication protocol is SPI and this display is used to give feedback to the user in form of the name of the LED string lighting style name. The time will be displayed after no button activity has occurred in a certain number of seconds (TBD). The time is obtained by using the esp8266 module to connect to the internet through the LAN wifi and obtain the time from a time server. Each time the led string lighting style changes, the array index of that style is stored in the EEPROM so that on next start up that setting is immediately recalled and used. I2C protocol is used to talk to the EEPROM. There is also a standalone LED that indicates whether wifi is connected or not (red/green common cathode LED).
+This project was designed for a decorative Christmas tree made out of cedar which stands about two feet in height. It consists of a Raspberry Pi Pico, a string of ws2812 neopixels, a 128x64 pixel (model: SSD1306) OLED display, an EEPROM (model: 24LC512), and a standard push-button. The string of lights serve as the lights on the wooden Christmas tree and are controlled by one wire sending data in series to the lights. each new received value pushes the previous down the line to the next light. The different patterns of the lights are cycled through by pressing the push-button. The OLED display communication protocol is SPI and this display is used to give feedback to the user in form of the name of the LED string lighting style name. A blank screen will be displayed after no button activity has occurred in a certain number of seconds (TBD). Each time the led string lighting style changes, the array index of that style is stored in the EEPROM so that on next start up that setting is immediately recalled and used. I2C protocol is used to talk to the EEPROM.  
 
 ## Prerequisites
 
 The following classes (which are all in this repo) must be manually loaded onto the pico for this project to work:
 
-- base64.py
 - EEPROM_24LC512.py
-- esp8266.py
-- httpParser.py
 - image_utils.py
 - neopixel.py
 - ssd1306.py
