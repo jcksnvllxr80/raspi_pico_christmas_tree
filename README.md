@@ -25,7 +25,7 @@ This project was designed for a decorative Christmas tree made out of cedar whic
 The following classes (which are all in this repo) must be manually loaded onto the pico for this project to work:
 
 - EEPROM_24LC512.py
-- image_utils.py
+- img_utils.py
 - neopixel.py
 - ssd1306.py
 - main.py
