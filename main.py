@@ -33,10 +33,12 @@ ROWS_BTM_2_TOP = [ROW0, ROW1, ROW2, ROW3, ROW4, ROW5, ROW6, ROW7]
 ROWS_TOP_2_BTM = ROWS_BTM_2_TOP[::-1]
 NUM_ROWS = len(ROWS_BTM_2_TOP)
 NUM_LEDS = sum(len(x) for x in ROWS_BTM_2_TOP)
+INIT_SLEEP_MS = 3000
 
 led_data_pin = Pin(22)
 brightness = 0.2
 oled_fps = 5
+oled_screen_on = False
 dc = Pin(17)
 rst = Pin(20)
 cs = Pin(16)
@@ -86,6 +88,7 @@ oled_timer = Timer()
 spi = SPI(SPI_PORT, SPI_FREQ, mosi=mosi, sck=sck)
 oled = SSD1306_SPI(fullscreen_px_x, fullscreen_px_y, spi, dc, rst, cs)
 display_image(img_utils.get_system_ba("hello"))
+sleep_ms(INIT_SLEEP_MS)
 
 # initialize LED string stuff
 led_style_list = img_utils.get_style_list()
@@ -101,17 +104,25 @@ led_string.pixels_show()
 
 
 def update_oled_display(oled_timer):
+    global oled_screen_on
     if (time() - last_button_press) < INACTIVITY_TIMER:
         display_image(img_utils.get_style_img(led_style))
+        oled_screen_on = True
     else:
         display_image()  # display blank screen
+        oled_screen_on = False
 
 
 def button_press_isr(irq):
     global last_button_press, onboard_led
     last_button_press = time()
     onboard_led.on()
-    go_to_next_style()
+    
+    if oled_screen_on:
+        go_to_next_style()
+    else:
+        display_image(img_utils.get_style_img(led_style))
+
     onboard_led.off()
 
 
