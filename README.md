@@ -33,6 +33,17 @@ The following classes (which are all in this repo) must be manually loaded onto 
 - ssd1306.py
 - main.py
 
+## Upload a single file to the Pico
+
+The Pico must already be running MicroPython (shows up as a COM port, not as the BOOTSEL drive).
+
+```sh
+pip install --user mpremote
+python -m mpremote cp main.py :main.py
+```
+
+Swap `main.py` for whichever file you want to overwrite. `python -m mpremote ls` lists what's on the device.
+
 ## Text Image Creation
 
   1. open paint and set the properties canvas size to the number of pixels on the display (128,64)
