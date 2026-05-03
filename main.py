@@ -597,6 +597,54 @@ def do_ember():
         sleep_ms(50)
 
 
+def do_vortex():
+    # Razer Vortex-inspired ambient swirl: soft radial rainbow bands that
+    # rotate through the tree instead of chasing hard pixel-to-pixel.
+    t = 0.0
+    while True:
+        phase = int(t * 1900)
+        for row_index in range(NUM_ROWS):
+            row = ROWS_BTM_2_TOP[row_index]
+            center = (len(row) - 1) / 2
+            for slot_index in range(len(row)):
+                led = row[slot_index]
+                distance = abs(slot_index - center) / (center + 1)
+                wave = sin(t * 0.9 + row_index * 0.7 + slot_index * 1.1)
+                h = int(phase + row_index * 5200 + distance * 14000 + wave * 2600) & 0xFFFF
+                v = 150 + int((wave + 1.0) * 34)
+                color = Neopixel.colorHSV(h, 225, v)
+                led_string.pixels_set(led - 1, (GAMMA[color[0]], GAMMA[color[1]], GAMMA[color[2]]))
+        led_string.pixels_show()
+        t += 0.07
+        if not led_style == "vortex":
+            return
+        sleep_ms(55)
+
+
+def do_solstice():
+    # A warm-to-cool breath: amber lower branches, aqua upper branches,
+    # with slow lavender drift through the middle.
+    t = 0.0
+    while True:
+        breath = (sin(t * 0.55) + 1.0) / 2.0
+        for row_index in range(NUM_ROWS):
+            row = ROWS_BTM_2_TOP[row_index]
+            row_mix = row_index / (NUM_ROWS - 1)
+            base_hue = int(7500 + row_mix * 34500)
+            for slot_index in range(len(row)):
+                led = row[slot_index]
+                shimmer = sin(t + row_index * 0.8 + slot_index * 1.4)
+                h = int(base_hue + shimmer * 2200 + breath * 1800) & 0xFFFF
+                v = 135 + int(breath * 46) + int((shimmer + 1.0) * 13)
+                color = Neopixel.colorHSV(h, 205, v)
+                led_string.pixels_set(led - 1, (GAMMA[color[0]], GAMMA[color[1]], GAMMA[color[2]]))
+        led_string.pixels_show()
+        t += 0.06
+        if not led_style == "solstice":
+            return
+        sleep_ms(70)
+
+
 def get_date_string(now):
     year = str(now[0])
     month = img_utils.get_month(now[1])
@@ -650,7 +698,7 @@ style_func_list = [
     do_yellow, do_green, do_cyan, do_blue, do_purple, do_white,
     do_firefly, do_blend, do_flash, do_chasebow, do_rainbow_ttb,
     do_rainbow_btt, do_chase_ttb, do_chase_btt,
-    do_comet, do_aurora, do_ember
+    do_comet, do_aurora, do_ember, do_vortex, do_solstice
 ]
 style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
