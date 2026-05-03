@@ -23,7 +23,7 @@ INACTIVITY_TIMER = 7
 STYLE_BYTES = 2
 STYLE_ADDRESS = 0
 I2C_FREQ = 1_000_000
-SPI_FREQ = 115_200
+SPI_FREQ = 4_000_000
 SPI_PORT = 0
 UART_BAUD = 115_200
 COLON = ':'
@@ -57,6 +57,9 @@ grn_wifi_led = Pin(10, Pin.OUT)
 red_wifi_led = Pin(11, Pin.OUT)
 brightness = 0.2
 oled_fps = 5
+oled_needs_check = True
+oled_displayed_state = None  # ('image', style) or ('time', rtc[:6], style)
+last_button_press = 0
 dc = Pin(17)
 rst = Pin(20)
 cs = Pin(16)
@@ -186,19 +189,25 @@ def set_time():
     status = get_wifi_conn_status(esp01.getWifiAccessPointConnectionStatus(), False)
 
 
+DAY_OF_WEEK_MAP = {
+    "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3,
+    "Friday": 4, "Saturday": 5, "Sunday": 6
+}
+
+
 def set_rtc(re_match, response_json):
     date_formatted_str = re_match.group(0).replace("T", "-")\
-        .replace(":", "-").replace(".", "-").split("-")
+        .replace(":", "-").split("-")
     time_list = list(map(int, date_formatted_str))
     rtc.datetime((
         time_list[0],
         time_list[1],
         time_list[2],
-        int(response_json['day_of_week']),
+        DAY_OF_WEEK_MAP.get(response_json['dayOfTheWeek'], 0),
         time_list[3],
         time_list[4],
-        time_list[5],
-        time_list[6]
+        0,
+        0
     ))
 
 
@@ -218,8 +227,8 @@ def query_time_api(host, path):
         print("\nResponse from {} --> {}\n".format(host + path, httpRes))
         json_resp_obj = ujson.loads(clean_json(str(httpRes)))
         print("json obj --> {}\n".format(json_resp_obj))
-        datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d)'
-        match = re.search(datetime_regex_string, json_resp_obj['datetime'])
+        datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d)'
+        match = re.search(datetime_regex_string, json_resp_obj['currentDateTime'])
         if match:
             set_rtc(match, json_resp_obj)
             print("RTC was set from internet time API: {}".format(match.group(0)))
@@ -254,6 +263,15 @@ led_style = led_style_list[style_index]
 led_string = Neopixel(led_data_pin, NUM_LEDS, brightness)
 led_string.clear_pixels()
 led_string.pixels_show()
+
+# Wrap pixels_show so OLED state checks happen at a safe point — right after
+# the WS2812 frame has been clocked out and latched.
+_neopixel_show = led_string.pixels_show
+def _pixels_show_with_oled():
+    _neopixel_show()
+    _process_oled()
+led_string.pixels_show = _pixels_show_with_oled
+
 # Create an ESP8266 Object, init, and connect to wifi AP
 wifi_timer = Timer()
 esp01 = ESP8266(uart_port, UART_BAUD, uart_tx_pin, uart_rx_pin)
@@ -262,10 +280,30 @@ connection = get_wifi_conn_status(connect_wifi(), True)
 
 
 def update_oled_display(oled_timer):
+    # Hard IRQ context: just flag — actual SPI work runs from main loop.
+    global oled_needs_check
+    oled_needs_check = True
+
+
+def _process_oled():
+    # Called from main-loop context after each pixels_show, where it's safe
+    # to do SPI without corrupting an in-flight WS2812 transmission.
+    global oled_needs_check, oled_displayed_state
+    if not oled_needs_check:
+        return
+    oled_needs_check = False
     if (time() - last_button_press) < INACTIVITY_TIMER:
-        display_image(img_utils.get_style_img(led_style))
+        target = ('image', led_style)
+        if oled_displayed_state != target:
+            display_image(img_utils.get_style_img(led_style))
+            oled_displayed_state = target
     else:
-        display_date_and_time()
+        # Cache by year/month/day/weekday/hour/minute + style — only redraw
+        # when one of those changes (typically once a minute).
+        target = ('time', tuple(rtc.datetime()[:6]), led_style)
+        if oled_displayed_state != target:
+            display_date_and_time()
+            oled_displayed_state = target
 
 
 def update_conn_status(wifi_timer):
@@ -278,10 +316,11 @@ def update_conn_status(wifi_timer):
 
 
 def button_press_isr(irq):
-    global last_button_press, onboard_led
+    global last_button_press, onboard_led, oled_needs_check
     last_button_press = time()
     onboard_led.on()
     go_to_next_style()
+    oled_needs_check = True
     onboard_led.off()
 
 
@@ -556,9 +595,9 @@ style_func_list = [
 ]
 style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
+last_button_press = time()
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_press_isr)
 oled_timer.init(freq=oled_fps, mode=Timer.PERIODIC, callback=update_oled_display)
 wifi_timer.init(period=WIFI_CHECK_PERIOD, mode=Timer.PERIODIC, callback=update_conn_status)
-last_button_press = time()
 while True:
     style_to_func_dict.get(led_style, do_rainbow_cycle)()

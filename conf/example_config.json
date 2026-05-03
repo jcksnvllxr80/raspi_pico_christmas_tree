@@ -5,7 +5,7 @@
     "hostname": "pico-led-tree"
   },
   "time_api": {
-    "host": "worldtimeapi.org",
-    "path": "/api/timezone/America/New_York"
+    "host": "worldclockapi.com",
+    "path": "/api/json/est/now"
   }
 }
