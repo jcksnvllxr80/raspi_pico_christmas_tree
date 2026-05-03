@@ -84,7 +84,10 @@ style_ba_dict = {
     led_style_list[15]: ttb_bow_ba,
     led_style_list[16]: btt_bow_ba,
     led_style_list[17]: ttb_chase_ba,
-    led_style_list[18]: btt_chase_ba
+    led_style_list[18]: btt_chase_ba,
+    led_style_list[19]: comet_ba,
+    led_style_list[20]: aurora_ba,
+    led_style_list[21]: ember_ba
 }
 
 time_ba_dict = {
