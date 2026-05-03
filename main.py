@@ -371,18 +371,21 @@ def do_flash():
 
 
 def do_comet():
-    # Trail wraps modulo NUM_LEDS so the head re-enters at the start the
-    # instant it would leave the end — no gap between passes.
+    # Single comet sweep, head appears at start the moment the previous
+    # trail tip leaves the end — same per-pixel speed, no pre-roll gap.
     trail_len = 8
     pos = 0
     while True:
         led_string.clear_pixels()
         for i in range(trail_len + 1):
-            p = (pos - i) % NUM_LEDS
-            v = GAMMA[max(0, 255 - i * 32)]
-            led_string.pixels_set(p, (v, v, v))
+            p = pos - i
+            if 0 <= p < NUM_LEDS:
+                v = GAMMA[max(0, 255 - i * 32)]
+                led_string.pixels_set(p, (v, v, v))
         led_string.pixels_show()
-        pos = (pos + 1) % NUM_LEDS
+        pos += 1
+        if pos >= NUM_LEDS + trail_len:
+            pos = 0
         if not led_style == "comet":
             return
         sleep_ms(40)
