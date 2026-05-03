@@ -64,6 +64,7 @@ brightness = 0.2
 oled_fps = 5
 oled_needs_check = True
 oled_displayed_state = None  # ('image', style) or ('time', rtc[:6], style)
+wifi_check_pending = False
 last_button_press = 0
 dc = Pin(17)
 rst = Pin(20)
@@ -227,21 +228,27 @@ def clean_json(response):
 
 
 def query_time_api(host, path):
-    httpCode, httpRes = esp01.doHttpGet(host, path)
-    if httpRes:
-        print("\nResponse from {} --> {}\n".format(host + path, httpRes))
-        json_resp_obj = ujson.loads(clean_json(str(httpRes)))
-        print("json obj --> {}\n".format(json_resp_obj))
-        datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d)'
-        match = re.search(datetime_regex_string, json_resp_obj['currentDateTime'])
-        if match:
-            set_rtc(match, json_resp_obj)
-            print("RTC was set from internet time API: {}".format(match.group(0)))
+    # Network is the failure mode that has historically taken the tree down
+    # overnight (API outage, malformed JSON, UART hiccup). Swallow everything
+    # so the RTC just keeps its previous value and the main loop survives.
+    try:
+        httpCode, httpRes = esp01.doHttpGet(host, path)
+        if httpRes:
+            print("\nResponse from {} --> {}\n".format(host + path, httpRes))
+            json_resp_obj = ujson.loads(clean_json(str(httpRes)))
+            print("json obj --> {}\n".format(json_resp_obj))
+            datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d)'
+            match = re.search(datetime_regex_string, json_resp_obj['currentDateTime'])
+            if match:
+                set_rtc(match, json_resp_obj)
+                print("RTC was set from internet time API: {}".format(match.group(0)))
+            else:
+                print("Error parsing time from http response; cant set RTC.")
         else:
-            print("Error parsing time from http response; cant set RTC.")
-    else:
-        print("Error; no response from host: {}; cant set RTC."\
-              .format(host+path))
+            print("Error; no response from host: {}; cant set RTC."\
+                  .format(host+path))
+    except Exception as e:
+        print("query_time_api failed; keeping previous RTC: {}".format(e))
 
 
 def write_style_index_to_eeprom(index):
@@ -275,6 +282,7 @@ _neopixel_show = led_string.pixels_show
 def _pixels_show_with_oled():
     _neopixel_show()
     _process_oled()
+    _process_wifi_check()
 led_string.pixels_show = _pixels_show_with_oled
 
 # Create an ESP8266 Object, init, and connect to wifi AP
@@ -312,12 +320,28 @@ def _process_oled():
 
 
 def update_conn_status(wifi_timer):
-    global connection
-    # if rtc.datetime()[HOUR_POSITION] in HOURS_TO_SYNC_TIME:
-    if esp01.getWifiAccessPointConnectionStatus() not in ESP8266_WIFI_CONNECTED:
-        connection = get_wifi_conn_status(connect_wifi(), True)
-    else:
-        set_time()
+    # Hard IRQ context: just flag — UART AT commands, HTTP, and SPI display
+    # writes are too heavy to do here, and any exception in IRQ would leave
+    # the SPI/UART peripherals in an unknown state.
+    global wifi_check_pending
+    wifi_check_pending = True
+
+
+def _process_wifi_check():
+    # Called from main-loop context after each pixels_show. Same SPI bus as
+    # _process_oled, so doing this here (instead of from the timer IRQ)
+    # avoids preempting an in-flight OLED transfer.
+    global wifi_check_pending, connection
+    if not wifi_check_pending:
+        return
+    wifi_check_pending = False
+    try:
+        if esp01.getWifiAccessPointConnectionStatus() not in ESP8266_WIFI_CONNECTED:
+            connection = get_wifi_conn_status(connect_wifi(), True)
+        else:
+            set_time()
+    except Exception as e:
+        print("wifi check failed: {}".format(e))
 
 
 def button_press_isr(irq):
