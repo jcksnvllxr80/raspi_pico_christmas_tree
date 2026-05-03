@@ -13,6 +13,11 @@ import random
 import base64
 import ujson
 import re
+from math import sin
+
+# Perceptual brightness curve — RGB output is non-linear in perceived intensity,
+# so dim ramps look "jumpy". Lookup table maps linear input to gamma 2.6 output.
+GAMMA = bytes(int(((i / 255.0) ** 2.6) * 255 + 0.5) for i in range(256))
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("RPi-Pico MicroPython Ver:", sys.version)
@@ -539,6 +544,56 @@ def do_flash():
                 return
 
 
+def do_comet():
+    # Trail wraps modulo NUM_LEDS so the head re-enters at the start the
+    # instant it would leave the end — no gap between passes.
+    trail_len = 8
+    pos = 0
+    while True:
+        led_string.clear_pixels()
+        for i in range(trail_len + 1):
+            p = (pos - i) % NUM_LEDS
+            v = GAMMA[max(0, 255 - i * 32)]
+            led_string.pixels_set(p, (v, v, v))
+        led_string.pixels_show()
+        pos = (pos + 1) % NUM_LEDS
+        if not led_style == "comet":
+            return
+        sleep_ms(40)
+
+
+def do_aurora():
+    # Slow drift through greens, cyans, blues, purples — gamma-corrected so
+    # the dim end of the curve is perceptually smooth instead of stepping.
+    t = 0.0
+    while True:
+        for i in range(NUM_LEDS):
+            h = int(sin(t * 0.7 + i * 0.22) * 14000 + 35000) & 0xFFFF
+            color = Neopixel.colorHSV(h, 230, 200)
+            led_string.pixels_set(i, (GAMMA[color[0]], GAMMA[color[1]], GAMMA[color[2]]))
+        led_string.pixels_show()
+        t += 0.08
+        if not led_style == "aurora":
+            return
+        sleep_ms(50)
+
+
+def do_ember():
+    # Warm-tone sibling to aurora — drifts through greens, yellows, oranges.
+    # Hue range ~5000..21000 (16-bit) covers red-orange through yellow to green.
+    t = 0.0
+    while True:
+        for i in range(NUM_LEDS):
+            h = int(sin(t * 0.7 + i * 0.22) * 8000 + 13000) & 0xFFFF
+            color = Neopixel.colorHSV(h, 230, 200)
+            led_string.pixels_set(i, (GAMMA[color[0]], GAMMA[color[1]], GAMMA[color[2]]))
+        led_string.pixels_show()
+        t += 0.08
+        if not led_style == "ember":
+            return
+        sleep_ms(50)
+
+
 def get_date_string(now):
     year = str(now[0])
     month = img_utils.get_month(now[1])
@@ -588,10 +643,11 @@ def create_time_image(digits_tuple):
 
 
 style_func_list = [
-    do_rainbow_cycle, do_chase, do_fill, do_off, do_red, 
+    do_rainbow_cycle, do_chase, do_fill, do_off, do_red,
     do_yellow, do_green, do_cyan, do_blue, do_purple, do_white,
     do_firefly, do_blend, do_flash, do_chasebow, do_rainbow_ttb,
-    do_rainbow_btt, do_chase_ttb, do_chase_btt
+    do_rainbow_btt, do_chase_ttb, do_chase_btt,
+    do_comet, do_aurora, do_ember
 ]
 style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
