@@ -25,16 +25,16 @@ STYLE_ADDRESS = 0
 I2C_FREQ = 1_000_000
 SPI_FREQ = 4_000_000
 SPI_PORT = 0
-# Configure the number/order of WS2812 LEDs.
-ROW0 = [18, 19, 20, 21, 22, 23, 24, 25]
-ROW1 = [15, 16, 17, 26, 27, 28]
-ROW2 = [12, 13, 14, 29,30, 31]
-ROW3 = [10, 11, 32, 33]
-ROW4 = [1, 2, 8, 9]
-ROW5 = [3, 7]
-ROW6 = [4, 6]
-ROW7 = [5]
-ROWS_BTM_2_TOP = [ROW0, ROW1, ROW2, ROW3, ROW4, ROW5, ROW6, ROW7]
+# Configure the number/order of WS2812 LEDs. (Pineapple)
+ROW0 = [18, 19, 20, 21, 22]
+ROW1 = [15, 16, 17, 23, 24]
+ROW2 = [12, 13, 14, 25, 26]
+ROW3 = [9, 10, 11, 27, 28]
+ROW4 = [6, 7, 8, 29, 30]
+ROW5 = [4, 5, 31, 32, 33]
+ROW6 = [1, 2, 3]
+
+ROWS_BTM_2_TOP = [ROW0, ROW1, ROW2, ROW3, ROW4, ROW5, ROW6]
 ROWS_TOP_2_BTM = ROWS_BTM_2_TOP[::-1]
 NUM_ROWS = len(ROWS_BTM_2_TOP)
 NUM_LEDS = sum(len(x) for x in ROWS_BTM_2_TOP)
