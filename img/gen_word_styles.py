@@ -153,12 +153,54 @@ print('vortex saved')
 print('\nAll done.')
 
 
+# ── FIREBALL ── Chiller (wild dripping font) + upward flame tips
+SCALE = 3
+font_big, sz = fit_font('C:/Windows/Fonts/CHILLER.TTF', 'fireball',
+                        112 * SCALE, 52 * SCALE, start=240)
+print(f'fireball: Chiller size {sz}')
+big = Image.new('RGB', (W * SCALE, H * SCALE), 0)
+bd = ImageDraw.Draw(big)
+draw_centered(bd, W * SCALE, H * SCALE, 'fireball', font_big, (255, 255, 255))
+
+# italic shear (lean right, same as comet)
+arr = np.array(big, dtype=np.uint8)
+sheared = np.zeros_like(arr)
+for row in range(H * SCALE):
+    shift = int((H * SCALE // 2 - row) * 0.18)
+    src = arr[row]
+    shifted = np.roll(src, shift, axis=0)
+    if shift > 0:
+        shifted[:shift] = 0
+    elif shift < 0:
+        shifted[shift:] = 0
+    sheared[row] = shifted
+
+fireball_img = Image.fromarray(sheared).resize((W, H), Image.LANCZOS)
+
+# add small upward flame spikes above the text
+fd = ImageDraw.Draw(fireball_img)
+import random as _rng
+_rng.seed(42)
+for _ in range(18):
+    cx = _rng.randint(8, W - 8)
+    base_y = _rng.randint(2, 10)
+    height = _rng.randint(3, 8)
+    half = _rng.randint(1, 3)
+    fd.polygon([(cx - half, base_y + height),
+                (cx,        base_y),
+                (cx + half, base_y + height)],
+               fill=(255, 255, 255))
+
+fireball_img.save(f'{OUT}/fireball.png')
+print('fireball saved')
+
+
 # ── Update img_utils.py with MONO_HLSB bytearrays ──────────────────────────
 
 IMGUTILS = 'C:/Users/A-A-Ron/git/raspi_pico_christmas_tree/img/img_utils.py'
 THRESHOLD = 80   # pixel value above this → white (1) in 1-bit
 
-NAMES = ['aurora', 'comet', 'ember', 'solstice', 'vortex']
+NAMES = ['aurora', 'comet', 'ember', 'fireball', 'solstice', 'vortex']
 
 
 def to_mono_hlsb(png_path, threshold=THRESHOLD):
