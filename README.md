@@ -39,10 +39,16 @@ The Pico must already be running MicroPython (shows up as a COM port, not as the
 
 ```sh
 pip install --user mpremote
-python -m mpremote cp main.py :main.py
+python -m mpremote cp main.py :main.py + reset
 ```
 
-Swap `main.py` for whichever file you want to overwrite. `python -m mpremote ls` lists what's on the device.
+Swap `main.py` for whichever file you want to overwrite. The `+ reset` soft-resets the controller immediately after the copy so the new code takes effect. `python -m mpremote ls` lists what's on the device.
+
+To delete a file:
+
+```sh
+python -m mpremote rm :neopixel.py
+```
 
 ## Text Image Creation
 
