@@ -47,6 +47,12 @@ To delete a file:
 python -m mpremote rm :neopixel.py
 ```
 
+To dump the contents of a file to the terminal:
+
+```sh
+python -m mpremote exec "print(open('main.py').read())"
+```
+
 ## Text Image Creation
 
   1. open paint and set the properties canvas size to the number of pixels on the display (128,64)
