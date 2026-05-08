@@ -24,6 +24,10 @@ print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 CONFIG_FILE = "conf/config.json"
 INACTIVITY_TIMER = 7
+BLANK_TIMER = 30
+PHASE_IMAGE = 0  # effect image shown; button advances effect
+PHASE_TIME  = 1  # time shown; button wakes to image
+PHASE_BLANK = 2  # display off; button wakes to image
 STYLE_BYTES = 2
 STYLE_ADDRESS = 0
 I2C_FREQ = 1_000_000
@@ -60,7 +64,8 @@ red_wifi_led = Pin(11, Pin.OUT)
 brightness = 0.2
 oled_fps = 5
 oled_needs_check = True
-oled_displayed_state = None  # ('image', style) or ('time', rtc[:6], style)
+oled_displayed_state = None  # ('image', style) or ('time', rtc[:6], style) or ('blank',)
+display_phase = PHASE_IMAGE
 wifi_check_pending = False
 last_button_press = 0
 dc = Pin(17)
@@ -133,6 +138,9 @@ def display_image(byte_array=None):
         # Clear oled display
         oled.fill(0)
         oled.blit(fb, 1, 1)
+        oled.show()
+    else:
+        oled.fill(0)
         oled.show()
 
 
@@ -277,22 +285,30 @@ def update_oled_display(oled_timer):
 def _process_oled():
     # Called from main-loop context after each pixels_show, where it's safe
     # to do SPI without corrupting an in-flight WS2812 transmission.
-    global oled_needs_check, oled_displayed_state
+    global oled_needs_check, oled_displayed_state, display_phase
     if not oled_needs_check:
         return
     oled_needs_check = False
-    if (time() - last_button_press) < INACTIVITY_TIMER:
+    elapsed = time() - last_button_press
+    if elapsed < INACTIVITY_TIMER:
+        display_phase = PHASE_IMAGE
         target = ('image', led_style)
         if oled_displayed_state != target:
             display_image(img_utils.get_style_img(led_style))
             oled_displayed_state = target
-    else:
+    elif elapsed < BLANK_TIMER:
+        display_phase = PHASE_TIME
         # Cache by year/month/day/weekday/hour/minute + style — only redraw
         # when one of those changes (typically once a minute).
         target = ('time', tuple(rtc.datetime()[:6]), led_style)
         if oled_displayed_state != target:
             display_date_and_time()
             oled_displayed_state = target
+    else:
+        display_phase = PHASE_BLANK
+        if oled_displayed_state != ('blank',):
+            display_image()
+            oled_displayed_state = ('blank',)
 
 
 def update_conn_status(wifi_timer):
@@ -324,7 +340,8 @@ def button_press_isr(irq):
     global last_button_press, onboard_led, oled_needs_check
     last_button_press = time()
     onboard_led.on()
-    go_to_next_style()
+    if display_phase == PHASE_IMAGE:
+        go_to_next_style()
     oled_needs_check = True
     onboard_led.off()
 
