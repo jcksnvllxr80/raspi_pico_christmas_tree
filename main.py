@@ -584,6 +584,35 @@ def do_comet():
         sleep_ms(40)
 
 
+def do_fireball():
+    # pixels_set takes (G, R, B) — confirmed from neopixel.py constants
+    # 1px white head → yellow → orange (bulk) → red → dim red tail
+    COLORS = [
+        (255, 255, 200),  # 0 head: white hot
+        (230, 255,  50),  # 1 white-yellow
+        (200, 255,   0),  # 2 yellow
+        (150, 255,   0),  # 3 yellow-orange
+        ( 90, 240,   0),  # 4 orange
+        ( 50, 210,   0),  # 5 deep orange
+        ( 20, 170,   0),  # 6 orange-red
+        (  0, 120,   0),  # 7 red
+        (  0,  40,   0),  # 8 tail: dying ember
+    ]
+    trail_len = 8
+    pos = 0
+    while True:
+        led_string.clear_pixels()
+        for i in range(trail_len + 1):
+            p = (pos - i) % NUM_LEDS
+            g, r, b = COLORS[i]
+            led_string.pixels_set(p, (GAMMA[g], GAMMA[r], GAMMA[b]))
+        led_string.pixels_show()
+        pos = (pos + 1) % NUM_LEDS
+        if not led_style == "fireball":
+            return
+        sleep_ms(40)
+
+
 def do_aurora():
     # Slow drift through greens, cyans, blues, purples — gamma-corrected so
     # the dim end of the curve is perceptually smooth instead of stepping.
@@ -721,7 +750,7 @@ style_func_list = [
     do_yellow, do_green, do_cyan, do_blue, do_purple, do_white,
     do_firefly, do_blend, do_flash, do_chasebow, do_rainbow_ttb,
     do_rainbow_btt, do_chase_ttb, do_chase_btt,
-    do_comet, do_aurora, do_ember, do_vortex, do_solstice
+    do_comet, do_aurora, do_ember, do_vortex, do_solstice, do_fireball
 ]
 style_to_func_dict = dict(zip(led_style_list, style_func_list))
 show_current_style(led_style)
