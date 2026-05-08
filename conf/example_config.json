@@ -5,7 +5,7 @@
     "hostname": "pico-led-tree"
   },
   "time_api": {
-    "host": "worldclockapi.com",
-    "path": "/api/json/est/now"
+    "ntp_server": "pool.ntp.org",
+    "tz_offset": -4
   }
 }

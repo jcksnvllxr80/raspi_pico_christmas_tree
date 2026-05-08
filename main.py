@@ -12,7 +12,6 @@ from neopixel import Neopixel
 import random
 import base64
 import ujson
-import re
 from math import sin
 
 # Perceptual brightness curve — RGB output is non-linear in perceived intensity,
@@ -32,8 +31,6 @@ SPI_FREQ = 4_000_000
 SPI_PORT = 0
 UART_BAUD = 115_200
 COLON = ':'
-OPENING_BRACE = '{'
-CLOSING_BRACE = '}'
 WIFI_MODE = 3
 WIFI_CHECK_PERIOD = 3_600_000  # milliseconds (hourly)
 # HOURS_PER_DAY = 24
@@ -191,62 +188,41 @@ def get_wifi_conn_status(conn_status, bool_query_time):
 
 def set_time():
     display_image(img_utils.get_system_ba("set_time"))
-    query_time_api(config["time_api"]["host"], config["time_api"]["path"])
+    query_time_api(config["time_api"]["ntp_server"], config["time_api"]["tz_offset"])
     status = get_wifi_conn_status(esp01.getWifiAccessPointConnectionStatus(), False)
 
 
-DAY_OF_WEEK_MAP = {
-    "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3,
-    "Friday": 4, "Saturday": 5, "Sunday": 6
+SNTP_DOW_MAP = {
+    "Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3,
+    "Fri": 4, "Sat": 5, "Sun": 6
+}
+SNTP_MONTH_MAP = {
+    "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4,
+    "May": 5, "Jun": 6, "Jul": 7, "Aug": 8,
+    "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
 }
 
 
-def set_rtc(re_match, response_json):
-    date_formatted_str = re_match.group(0).replace("T", "-")\
-        .replace(":", "-").split("-")
-    time_list = list(map(int, date_formatted_str))
-    rtc.datetime((
-        time_list[0],
-        time_list[1],
-        time_list[2],
-        DAY_OF_WEEK_MAP.get(response_json['dayOfTheWeek'], 0),
-        time_list[3],
-        time_list[4],
-        0,
-        0
-    ))
+def set_rtc_from_sntp(time_str):
+    # Format: "Thu May  8 14:30:00 2026" — split() handles multiple spaces
+    parts = time_str.split()
+    dow   = SNTP_DOW_MAP.get(parts[0], 0)
+    month = SNTP_MONTH_MAP.get(parts[1], 1)
+    day   = int(parts[2])
+    h, m, s = (int(x) for x in parts[3].split(":"))
+    year  = int(parts[4])
+    rtc.datetime((year, month, day, dow, h, m, s, 0))
+    print("RTC set from SNTP: {}".format(time_str))
 
 
-def clean_json(response):
-    if not response[0] == OPENING_BRACE:
-        print("Stripping characters from before the opening brace at the start of the json string: {}".format(response))
-        response = response[response.find('{'):]
-    if not response[-1] == CLOSING_BRACE:
-        print("Stripping characters from after the ending brace of the json string: {}".format(response))
-        response = response[:response.find('}') + 1]
-    return response
 
-
-def query_time_api(host, path):
-    # Network is the failure mode that has historically taken the tree down
-    # overnight (API outage, malformed JSON, UART hiccup). Swallow everything
-    # so the RTC just keeps its previous value and the main loop survives.
+def query_time_api(ntp_server, tz_offset):
     try:
-        httpCode, httpRes = esp01.doHttpGet(host, path)
-        if httpRes:
-            print("\nResponse from {} --> {}\n".format(host + path, httpRes))
-            json_resp_obj = ujson.loads(clean_json(str(httpRes)))
-            print("json obj --> {}\n".format(json_resp_obj))
-            datetime_regex_string = r'(\d\d\d\d-\d\d-\d\dT\d\d:\d\d)'
-            match = re.search(datetime_regex_string, json_resp_obj['currentDateTime'])
-            if match:
-                set_rtc(match, json_resp_obj)
-                print("RTC was set from internet time API: {}".format(match.group(0)))
-            else:
-                print("Error parsing time from http response; cant set RTC.")
+        time_str = esp01.getSNTPTime(tz_offset=tz_offset, server=ntp_server)
+        if time_str:
+            set_rtc_from_sntp(time_str)
         else:
-            print("Error; no response from host: {}; cant set RTC."\
-                  .format(host+path))
+            print("SNTP returned no time; keeping previous RTC")
     except Exception as e:
         print("query_time_api failed; keeping previous RTC: {}".format(e))
 

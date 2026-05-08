@@ -582,6 +582,29 @@ class ESP8266:
             self._sendToESP8266("AT+CIPCLOSE\r\n")
             return 0, None
 
+    def getSNTPTime(self, tz_offset=-4, server="pool.ntp.org"):
+        """Configure SNTP and return the time string, or None on failure.
+
+        Returns a string like 'Thu May  8 14:30:00 2026', or None.
+        tz_offset: integer hours from UTC (e.g. -4 for EDT, -5 for EST).
+        """
+        cfg = 'AT+CIPSNTPCFG=1,{},"{}"\r\n'.format(tz_offset, server)
+        retData = self._sendToESP8266(cfg, delay=1)
+        if retData is None or ESP8266_OK_STATUS not in retData:
+            print("SNTP config failed: {}".format(retData))
+            return None
+        # Give the module time to sync with the NTP server
+        time.sleep(5)
+        retData = self._sendToESP8266("AT+CIPSNTPTIME?\r\n", delay=1)
+        if retData is None:
+            return None
+        retData = retData.decode("utf-8") if isinstance(retData, bytes) else str(retData)
+        if "+CIPSNTPTIME:" not in retData:
+            return None
+        time_str = retData.split("+CIPSNTPTIME:")[1].split("\\r\\n")[0].strip()
+        print("SNTP raw time: {}".format(time_str))
+        return time_str
+
     def __del__(self):
         """
         The destructor for ESP8266 class
