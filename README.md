@@ -30,6 +30,17 @@ The following classes (which are all in this repo) must be manually loaded onto 
 - ssd1306.py
 - main.py
 
+## Flashing MicroPython firmware (brand new Pico)
+
+Skip this section if the Pico already responds as a serial/COM port — it already has MicroPython.
+
+1. Download the latest MicroPython `.uf2` for the RP2040 from **https://micropython.org/download/RPI_PICO/**
+2. Hold the **BOOTSEL** button on the Pico, plug it into USB, then release the button.
+3. It mounts as a drive called **RPI-RP2** — drag and drop the `.uf2` file onto that drive.
+4. The Pico reboots automatically and is now running MicroPython. It will show up as a serial/COM port instead of a drive.
+
+Once you see the COM port you're ready to use `mpremote` or run the installer scripts in `tools/`.
+
 ## Upload a single file to the Pico
 
 The Pico must already be running MicroPython (shows up as a COM port, not as the BOOTSEL drive).
