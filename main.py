@@ -169,6 +169,7 @@ def init_esp8266():
 
 
 def connect_wifi():
+    global oled_displayed_state
     display_image(img_utils.get_system_ba("wifi"))
     print("Attempting to connect to wifi AP!")
     ssid = bytes(config["wifi"]["ssid"], 'utf-8')
@@ -179,6 +180,7 @@ def connect_wifi():
     )
     if connection_status in ESP8266_WIFI_CONNECTED:
         print("Successfully connected to the wifi AP!")
+    oled_displayed_state = None
     return connection_status
 
 
@@ -195,8 +197,10 @@ def get_wifi_conn_status(conn_status, bool_query_time):
 
 
 def set_time():
+    global oled_displayed_state
     display_image(img_utils.get_system_ba("set_time"))
     query_time_api(config["time_api"]["ntp_server"], config["time_api"]["tz_offset"])
+    oled_displayed_state = None
     status = get_wifi_conn_status(esp01.getWifiAccessPointConnectionStatus(), False)
 
 
