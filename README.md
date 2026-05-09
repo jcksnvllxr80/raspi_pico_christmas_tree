@@ -30,6 +30,24 @@ The following classes (which are all in this repo) must be manually loaded onto 
 - ssd1306.py
 - main.py
 
+## Installing / Updating
+
+The `tools/` directory contains one-shot installer scripts for Windows (`install.bat`) and macOS (`install.sh`) that handle everything from a completely bare machine — no git, Python, or anything else required. They install all dependencies, clone the repo, flash the correct set of files to the Pico via `mpremote`, and uninstall everything they added when done.
+
+```
+# Windows
+tools\install.bat              # LEDs only (no wifi/clock)
+tools\install.bat --wifi       # full firmware with wifi + NTP clock
+tools\install.bat --pineapple  # pineapple LED layout
+
+# macOS
+tools/install.sh               # LEDs only (no wifi/clock)
+tools/install.sh --wifi        # full firmware with wifi + NTP clock
+tools/install.sh --pineapple   # pineapple LED layout
+```
+
+See [`tools/README.md`](tools/README.md) for full details on what each flag does, which files get uploaded, and how the wifi credential flow works.
+
 ## Flashing MicroPython firmware (brand new Pico)
 
 Skip this section if the Pico already responds as a serial/COM port — it already has MicroPython.
