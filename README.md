@@ -36,13 +36,17 @@ The `tools/` directory contains one-shot installer scripts for Windows (`install
 
 ```
 # Windows
-tools\install.bat
+tools\install.bat              # LEDs only (no wifi/clock)
+tools\install.bat --wifi       # full firmware with wifi + NTP clock
+tools\install.bat --pineapple  # pineapple LED layout
 
 # macOS
-tools/install.sh
+tools/install.sh               # LEDs only (no wifi/clock)
+tools/install.sh --wifi        # full firmware with wifi + NTP clock
+tools/install.sh --pineapple   # pineapple LED layout
 ```
 
-See [`tools/README.md`](tools/README.md) for full details on what the script does and which files get uploaded.
+See [`tools/README.md`](tools/README.md) for full details on what each flag does, which files get uploaded, and how the wifi credential flow works.
 
 ## Flashing MicroPython firmware (brand new Pico)
 
