@@ -1,4 +1,4 @@
-# Raspberry Pi Pico with ws2812 LED string, SSD1306 OLED display, esp8266 (esp-01), and 24LC512 EEPROM. "Christmas Lights"
+# Raspberry Pi Pico with ws2812 LED string, SSD1306 OLED display, and 24LC512 EEPROM. "Pineapple Lights"
 
 [![GitHub version](https://img.shields.io/github/release/jcksnvllxr80/raspi_pico_christmas_tree.svg)](lib-release)
 [![GitHub download](https://img.shields.io/github/downloads/jcksnvllxr80/raspi_pico_christmas_tree/total.svg)](lib-release)
@@ -18,7 +18,7 @@
 
 ## Description
 
-This project was designed for a decorative Christmas tree made out of cedar which stands about two feet in height. It consists of a Raspberry Pi Pico, a string of ws2812 neopixels, a 128x64 pixel (model: SSD1306) OLED display, an EEPROM (model: 24LC512), and a standard push-button. The string of lights serve as the lights on the wooden Christmas tree and are controlled by one wire sending data in series to the lights. each new received value pushes the previous down the line to the next light. The different patterns of the lights are cycled through by pressing the push-button. The OLED display communication protocol is SPI and this display is used to give feedback to the user in form of the name of the LED string lighting style name. A blank screen will be displayed after no button activity has occurred in a certain number of seconds (TBD). Each time the led string lighting style changes, the array index of that style is stored in the EEPROM so that on next start up that setting is immediately recalled and used. I2C protocol is used to talk to the EEPROM.  
+This project was designed for a decorative pineapple sculpture fitted with ws2812 neopixels. It consists of a Raspberry Pi Pico, a string of ws2812 neopixels arranged in rows across the pineapple, a 128x64 pixel (model: SSD1306) OLED display, an EEPROM (model: 24LC512), and a standard push-button. The LEDs are controlled by one wire sending data in series — each new received value pushes the previous down the line to the next light. The different lighting effects are cycled through by pressing the push-button. The OLED display (SPI) shows the name of the currently active effect and goes blank after a configurable number of seconds of inactivity. Each time the effect changes, the array index of that effect is stored in the EEPROM so that on next startup that setting is immediately recalled and used. I2C protocol is used to talk to the EEPROM.
 
 ## Prerequisites
 
@@ -36,17 +36,13 @@ The `tools/` directory contains one-shot installer scripts for Windows (`install
 
 ```
 # Windows
-tools\install.bat              # LEDs only (no wifi/clock)
-tools\install.bat --wifi       # full firmware with wifi + NTP clock
-tools\install.bat --pineapple  # pineapple LED layout
+tools\install.bat
 
 # macOS
-tools/install.sh               # LEDs only (no wifi/clock)
-tools/install.sh --wifi        # full firmware with wifi + NTP clock
-tools/install.sh --pineapple   # pineapple LED layout
+tools/install.sh
 ```
 
-See [`tools/README.md`](tools/README.md) for full details on what each flag does, which files get uploaded, and how the wifi credential flow works.
+See [`tools/README.md`](tools/README.md) for full details on what the script does and which files get uploaded.
 
 ## Flashing MicroPython firmware (brand new Pico)
 
@@ -96,37 +92,3 @@ python -m mpremote exec "print(open('main.py').read())"
 - use various waveforms to mask the brightness of the strip... i.e. cos, tan, sawtooth, triangle
 - similarly to above, mask the waveforms along the time domain
 
-### USE THONNY TO WRITE THE FOLLOWING CODE TO PI PICO WHICH IS CONTROLLING ESP8266-01
-
-```python
-from machine import UART, Pin
-user_agent="RPi-Pico"
-host="worldtimeapi.org"
-path="/api/timezone/America/New_York"
-getHeader = "GET "+path+" HTTP/1.1\r\n"+"Host: " + host+"\r\n"+"User-Agent: "+user_agent+"\r\n"+"\r\n"
-txData = "AT+CIPSEND="+str(len(getHeader))+"\r\n"
-UART_Tx_BUFFER_LENGTH = 1024
-UART_Rx_BUFFER_LENGTH = 1024*2
-UART_BAUD = 115_200
-uart_port = 1
-uart_tx_pin = 4
-uart_rx_pin = 5
-esp = UART(uart_port, baudrate=UART_BAUD, tx=Pin(uart_tx_pin), rx=Pin(uart_rx_pin), txbuf=UART_Tx_BUFFER_LENGTH, rxbuf=UART_Rx_BUFFER_LENGTH)
-esp.write('AT\r\n'); esp.read()
-esp.write('AT+GMR\r\n'); esp.read()
-esp.write('ATE1\r\n'); esp.read()
-esp.write('AT+GMR\r\n'); esp.read()
-esp.write('AT+CWMODE_CUR=3\r\n'); esp.read()
-esp.write('AT+CWJAP_CUR="<YOUR_SSID>","<YOUR_PASSWORD>"\r\n'); esp.read()
-esp.write('AT+CIPSTATUS\r\n'); esp.read()
-esp.write('AT+CIPSTART="TCP","worldtimeapi.org",80\r\n'); esp.read()
-esp.write('AT+CWLIF\r\n'); esp.read()
-esp.write('AT+HTTPCLIENT=1,0,"http://httpbin.org/get","httpbin.org","/get",1\r\n'); esp.read()
-esp.write('AT+CIPSTART="TCP","worldtimeapi.org",80\r\n'); esp.read()
-esp.write("AT+CIPSEND="+str(len(getHeader))+"\r\n"); esp.read()
-esp.write(getHeader); esp.read()
-esp.write("AT+PING=\"google.com\"\r\n"); esp.read()
-esp.write("AT+PING=\"8.8.8.8\"\r\n"); esp.read()
-esp.write("AT+CWJAP?\r\n"); esp.read(); esp.read()
-esp.write("AT+CWQAP\r\n"); esp.read(); esp.read()
-```
